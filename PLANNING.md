@@ -1,6 +1,6 @@
 # TaskFlow — Project Planning
 
-**Status:** 🟡 In Pianificazione  
+**Status:** 🟢 In Sviluppo — Phase 2  
 **Ultimo aggiornamento:** 2026-04-09  
 **Stack:** Next.js 14 + TypeScript + Supabase + Vercel  
 **Documento di riferimento:** `PRD.md` | Regole sviluppo: `CLAUDE.md`
@@ -49,16 +49,15 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 
 **Obiettivo:** progetto funzionante localmente con CI/CD configurato.
 
-- [ ] Inizializzare progetto Next.js 14 con TypeScript strict
-- [ ] Configurare Tailwind CSS + shadcn/ui (tema base + dark mode con next-themes)
-- [ ] Configurare ESLint + Prettier
-- [ ] Creare repository Git + configurare Vercel con deploy automatico
+- [x] Inizializzare progetto Next.js 14 con TypeScript strict
+- [x] Configurare Tailwind CSS + shadcn/ui (tema base + dark mode con next-themes)
+- [x] Configurare ESLint + Prettier
 - [ ] Creare progetto Supabase (prod) + progetto Supabase locale per sviluppo
 - [ ] Configurare `supabase/` directory con CLI
-- [ ] Creare `.env.example` con tutte le variabili necessarie
-- [ ] Setup client Supabase: `lib/supabase/client.ts`, `lib/supabase/server.ts`
-- [ ] Configurare `middleware.ts` per protezione route autenticate
-- [ ] Struttura directory completa come da CLAUDE.md
+- [x] Creare `.env.example` con tutte le variabili necessarie
+- [x] Setup client Supabase: `lib/supabase/client.ts`, `lib/supabase/server.ts`
+- [x] Configurare `middleware.ts` per protezione route autenticate
+- [x] Struttura directory completa come da CLAUDE.md
 
 **Verifica:** `npm run dev` funziona, Supabase locale raggiungibile, deploy preview su Vercel OK.
 
