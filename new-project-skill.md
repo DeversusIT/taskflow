@@ -1,3 +1,8 @@
+---
+description: "New Project — Intervista guidata → PRD + CLAUDE.md + PLANNING.md + git init. Conduce un'intervista strutturata per raccogliere requisiti e genera automaticamente tutta la documentazione di progetto."
+argument-hint: "[descrizione opzionale dell'idea]"
+---
+
 # Skill: New Project — Interview → PRD + CLAUDE.md + PLANNING.md + Git
 
 > **Come installare questa skill**
