@@ -1,6 +1,6 @@
 # TaskFlow — Project Planning
 
-**Status:** 🟢 In Sviluppo — Phase 2  
+**Status:** 🟢 In Sviluppo — Phase 3  
 **Ultimo aggiornamento:** 2026-04-09  
 **Stack:** Next.js 14 + TypeScript + Supabase + Vercel  
 **Documento di riferimento:** `PRD.md` | Regole sviluppo: `CLAUDE.md`
@@ -67,22 +67,22 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 
 **Obiettivo:** schema DB completo con RLS policies su tutte le tabelle.
 
-- [ ] Migration 001: tabelle `profiles`, `workspaces`, `workspace_members`
-- [ ] Migration 002: tabelle `projects`, `project_members`, `phases`
-- [ ] Migration 003: tabelle `tasks`, `task_assignments`, `task_dependencies`
-- [ ] Migration 004: tabelle `checklists`, `checklist_items`
-- [ ] Migration 005: tabella `comments`
-- [ ] Migration 006: tabella `attachments`
-- [ ] Migration 007: tabelle `time_entries`
-- [ ] Migration 008: tabelle `reminders`, `notifications`
-- [ ] Migration 009: tabella `activity_log`
-- [ ] RLS policies per tutte le tabelle (super_admin, project_admin, editor, viewer)
-- [ ] Indici di performance: `tasks(project_id)`, `tasks(phase_id)`, `tasks(due_date)`, `comments(task_id)`, `notifications(user_id, read_at)`
-- [ ] Indici FTS: `tsvector` su `tasks.title` + `tasks.description` + `projects.name`
-- [ ] Funzione DB: `get_user_role_in_project(user_id, project_id)` — utility per RLS
-- [ ] Trigger DB: auto-insert in `profiles` su nuovo `auth.users`
-- [ ] Generare tipi TypeScript: `src/types/database.ts`
-- [ ] Seed data per sviluppo locale (`supabase/seed.sql`)
+- [x] Migration 001: tabelle `profiles`, `workspaces`, `workspace_members`
+- [x] Migration 002: tabelle `projects`, `project_members`, `phases`
+- [x] Migration 003: tabelle `tasks`, `task_assignments`, `task_dependencies`
+- [x] Migration 004: tabelle `checklists`, `checklist_items`
+- [x] Migration 005: tabella `comments`
+- [x] Migration 006: tabella `attachments`
+- [x] Migration 007: tabelle `time_entries`
+- [x] Migration 008: tabelle `reminders`, `notifications`
+- [x] Migration 009: tabella `activity_log`
+- [x] RLS policies per tutte le tabelle (super_admin, project_admin, editor, viewer)
+- [x] Indici di performance su tutti i FK e colonne critiche
+- [x] Indici FTS: `tsvector` su `tasks.title` + `tasks.description`
+- [x] Funzioni helper DB: `get_project_role()`, `get_workspace_role()`, `is_workspace_admin_for_project()`
+- [x] Trigger DB: auto-insert in `profiles` su nuovo `auth.users`
+- [x] Generare tipi TypeScript: `src/types/database.ts`
+- [-] Seed data per sviluppo locale (`supabase/seed.sql`) — rimandato
 
 **Verifica:** tutte le migration applicabili, tipi TS generati, RLS testata con utenti di test diversi.
 
@@ -472,8 +472,8 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 
 | # | Fase | Stato | Note |
 |---|------|-------|------|
-| 1 | Foundation & Setup | [ ] | |
-| 2 | Schema Database | [ ] | |
+| 1 | Foundation & Setup | [x] | Completata 2026-04-09 |
+| 2 | Schema Database | [x] | Completata 2026-04-09 |
 | 3 | Autenticazione | [ ] | |
 | 4 | Workspace & Ruoli | [ ] | |
 | 5 | Progetti & Fasi | [ ] | |
