@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, ChevronDown, Trash2, CheckSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ import {
   bulkUpdateStatusAction,
   bulkDeleteTasksAction,
 } from '@/app/(dashboard)/projects/[projectId]/actions'
+import type { NewTaskData } from '@/app/(dashboard)/projects/[projectId]/actions'
 import type { Task } from '@/lib/queries/tasks'
 import type { Phase } from '@/lib/queries/projects'
 import type { WorkspaceMember } from '@/lib/queries/workspace'
@@ -51,25 +52,41 @@ function QuickAddTask({
 }: {
   projectId: string
   phases: Phase[]
-  onCreated: () => void
+  onCreated: (task: NewTaskData) => void
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const bound = createTaskAction.bind(null, projectId)
-  const [state, formAction, isPending] = useActionState(bound, { error: null })
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
+  const phaseRef = useRef<HTMLSelectElement>(null)
+  const priorityRef = useRef<HTMLSelectElement>(null)
 
   useEffect(() => {
-    if (state.taskId) {
-      onCreated()
-      setOpen(false)
-      router.refresh()
-    }
-  }, [state.taskId])
-
-  useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 50)
+    if (open) setTimeout(() => titleRef.current?.focus(), 50)
   }, [open])
+
+  function handleSubmit() {
+    const title = titleRef.current?.value?.trim()
+    if (!title) return
+    setError(null)
+
+    const formData = new FormData()
+    formData.set('title', title)
+    formData.set('priority', priorityRef.current?.value ?? 'medium')
+    if (phaseRef.current?.value) formData.set('phase_id', phaseRef.current.value)
+
+    startTransition(async () => {
+      const result = await createTaskAction(projectId, { error: null }, formData)
+      if (result.error) {
+        setError(result.error)
+      } else if (result.newTask) {
+        onCreated(result.newTask)
+        setOpen(false)
+        if (titleRef.current) titleRef.current.value = ''
+      }
+    })
+  }
 
   if (!open) {
     return (
@@ -84,34 +101,33 @@ function QuickAddTask({
   }
 
   return (
-    <form action={formAction} className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+    <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
       <Input
-        ref={inputRef}
-        name="title"
+        ref={titleRef}
         placeholder="Titolo task…"
-        required
         className="flex-1 border-0 p-0 shadow-none focus-visible:ring-0 text-sm"
+        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
       />
       {phases.length > 0 && (
-        <select name="phase_id" className="rounded border border-input bg-transparent px-2 py-1 text-xs">
+        <select ref={phaseRef} className="rounded border border-input bg-transparent px-2 py-1 text-xs">
           <option value="">Nessuna fase</option>
           {phases.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
       )}
-      <select name="priority" className="rounded border border-input bg-transparent px-2 py-1 text-xs">
+      <select ref={priorityRef} defaultValue="medium" className="rounded border border-input bg-transparent px-2 py-1 text-xs">
         <option value="low">Bassa</option>
-        <option value="medium" selected>Media</option>
+        <option value="medium">Media</option>
         <option value="high">Alta</option>
         <option value="urgent">Urgente</option>
       </select>
-      <Button type="submit" size="sm" disabled={isPending}>
+      <Button size="sm" disabled={isPending} onClick={handleSubmit}>
         {isPending ? '…' : 'Aggiungi'}
       </Button>
-      <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>✕</Button>
-      {state.error && <p className="text-xs text-destructive">{state.error}</p>}
-    </form>
+      <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>✕</Button>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
   )
 }
 
@@ -211,7 +227,14 @@ export function TaskList({ initialTasks, projectId, phases, members }: Props) {
   const [filters, setFilters] = useState<Filters>({ status: 'all', priority: 'all', phase_id: 'all' })
   const [, startTransition] = useTransition()
 
-  useEffect(() => { setTasks(initialTasks) }, [initialTasks])
+  useEffect(() => {
+    setTasks((prev) => {
+      // Merge: keep locally-added tasks not yet returned by server, update existing ones
+      const serverIds = new Set(initialTasks.map((t) => t.id))
+      const localOnly = prev.filter((t) => !serverIds.has(t.id))
+      return [...initialTasks, ...localOnly]
+    })
+  }, [initialTasks])
 
   // Filtering
   const filtered = tasks.filter((t) => {
@@ -404,7 +427,10 @@ export function TaskList({ initialTasks, projectId, phases, members }: Props) {
           <QuickAddTask
             projectId={projectId}
             phases={phases}
-            onCreated={() => setSelected(new Set())}
+            onCreated={(newTask) => {
+              setTasks((prev) => [...prev, { ...newTask, assignees: [] }])
+              setSelected(new Set())
+            }}
           />
         </div>
       </div>

@@ -4,7 +4,23 @@ import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { CreateTaskSchema, UpdateTaskSchema } from '@/lib/validations/task'
 
-export type TaskActionState = { error: string | null; taskId?: string }
+export type NewTaskData = {
+  id: string
+  title: string
+  description: string | null
+  status: 'open' | 'in_progress' | 'on_hold' | 'completed'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  phase_id: string | null
+  due_date: string | null
+  start_date: string | null
+  estimated_hours: number | null
+  order_index: number
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export type TaskActionState = { error: string | null; newTask?: NewTaskData; taskId?: string }
 
 export async function createTaskAction(
   projectId: string,
@@ -49,7 +65,7 @@ export async function createTaskAction(
       created_by: user.id,
       order_index: count ?? 0,
     })
-    .select('id')
+    .select('id, title, description, status, priority, phase_id, due_date, start_date, estimated_hours, order_index, created_by, created_at, updated_at')
     .single()
 
   if (error || !task) {
@@ -57,7 +73,7 @@ export async function createTaskAction(
   }
 
   revalidatePath(`/projects/${projectId}`)
-  return { error: null, taskId: task.id }
+  return { error: null, newTask: task as NewTaskData }
 }
 
 export async function updateTaskAction(

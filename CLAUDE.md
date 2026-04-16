@@ -294,6 +294,20 @@ Prima di ogni feature che tocca il DB, verifica:
 
 ---
 
+## Memoria persistente (claude-mem)
+
+Il progetto utilizza **claude-mem** (plugin MCP) per preservare contesto tecnico cross-sessione. Gli hook plugin-level iniettano automaticamente contesto ad ogni `UserPromptSubmit` e salvano observations dopo ogni tool use. Non serve configurare nulla a livello progetto.
+
+**All'inizio di task non banali e prima di introdurre nuovi pattern:**
+
+1. Cerca precedenti rilevanti: usa `/claude-mem:mem-search` (o il tool MCP `search`) con query mirate sul dominio del task (es. `RLS policies`, `Server Actions task`, `drag and drop`, `useEffect merge pattern`)
+2. Se trovi observations pertinenti, usa `timeline` per espandere il contesto intorno all'ID rilevante
+3. Claude-mem salva automaticamente observations post-tool-use e riassume la sessione allo `Stop` — non serve salvataggio manuale
+
+**NON sostituisce** la auto-memory nativa in `~/.claude/projects/-Users-luca-Desktop-Claude-Code-138507/memory/`: sono sistemi complementari. Auto-memory per preferenze/feedback strutturati (MEMORY.md + file tematici), claude-mem per osservazioni tecniche granulari indicizzate semanticamente sul DB SQLite in `~/.claude-mem/`.
+
+---
+
 ## Schema DB — regole di modifica
 
 Ogni modifica allo schema DB richiede:

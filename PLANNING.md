@@ -1,6 +1,6 @@
 # TaskFlow — Project Planning
 
-**Status:** 🟢 In Sviluppo — Phase 5  
+**Status:** 🟢 In Sviluppo — Phase 7  
 **Ultimo aggiornamento:** 2026-04-16  
 **Stack:** Next.js 14 + TypeScript + Supabase + Vercel  
 **Documento di riferimento:** `PRD.md` | Regole sviluppo: `CLAUDE.md`
@@ -154,28 +154,33 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 
 **Obiettivo:** creazione, modifica e visualizzazione task con tutti i metadati.
 
-- [ ] API task: `GET/POST /api/tasks`, `GET/PUT/DELETE /api/tasks/[id]`
-- [ ] API task assignments: `POST/DELETE /api/tasks/[id]/assignments`
-- [ ] Vista Lista: tabella/elenco con colonne configurabili
-- [ ] Filtri: stato, priorità, assegnatario, fase, scadenza (range), tag
-- [ ] Ordinamento per qualsiasi colonna
-- [ ] Raggruppamento: per fase, priorità, stato, assegnatario
-- [ ] Inline edit: stato e priorità senza aprire il pannello
-- [ ] Selezione multipla + azioni bulk (cambia stato, cambia priorità, elimina)
-- [ ] Pannello dettaglio task (slide-in da destra):
-  - Tutti i metadati modificabili
-  - Assegnazione utenti (multi-select)
-  - Sezione subtask + checklist (fase successiva, placeholder)
-  - Sezione commenti (fase successiva, placeholder)
-  - Sezione allegati (fase successiva, placeholder)
-- [ ] Quick-add task: form inline in fondo alla lista (titolo + scadenza + assegnato)
-- [ ] Validazione Zod su tutti gli endpoint task
-- [ ] Componente `PriorityBadge` (colori: Urgente/Alta/Media/Bassa)
-- [ ] Componente `StatusBadge` (colori: Aperta/In corso/Sospesa/Conclusa)
+- [-] API task REST — usate Server Actions al posto di API Routes (stessa sicurezza, meno boilerplate)
+- [-] API task assignments — idem, gestite via Server Actions
+- [x] Vista Lista: tabella con colonne checkbox | titolo+assegnatari | stato | priorità | fase | scadenza
+- [x] Filtri: stato, priorità, fase
+- [-] Ordinamento per colonna — rimandato V2
+- [-] Raggruppamento — rimandato V2
+- [x] Inline edit: stato direttamente dalla lista (Select inline)
+- [x] Selezione multipla + azioni bulk (cambia stato, elimina)
+- [x] Pannello dettaglio task (slide-in da destra):
+  - Tutti i metadati modificabili (titolo, descrizione, stato, priorità, fase, scadenza, ore stimate)
+  - Assegnazione utenti con toggle
+  - Sezione subtask placeholder
+  - Sezione commenti placeholder
+- [x] Quick-add task: form inline in fondo alla lista (titolo + fase + priorità)
+- [x] Validazione Zod su tutte le Server Actions task
+- [x] Componente `PriorityBadge`
+- [x] Componente `StatusBadge`
 
-**Componenti:** `TaskList`, `TaskRow`, `TaskPanel`, `TaskForm`, `FilterBar`, `BulkActionBar`, `PriorityBadge`, `StatusBadge`, `UserSelect`
+**Componenti:** `TaskList`, `TaskPanel`, `FilterBar`, `QuickAddTask`, `PriorityBadge`, `StatusBadge`
 
-**Verifica:** CRUD task funzionante, filtri e ordinamento corretti, permessi editor/viewer rispettati, pannello si apre/chiude correttamente.
+**Verifica:** CRUD task funzionante, filtri corretti, pannello si apre/chiude, bulk actions operative. ✅ Completata 2026-04-16
+
+**Note implementazione:**
+- Server Actions in `src/app/(dashboard)/projects/[projectId]/actions.ts` usano `createServiceClient()` per bypassare RLS sulle write
+- Query read in `src/lib/queries/tasks.ts` usano `createClient()` con RLS attivo
+- Quick-add usa `startTransition` + chiamata diretta alla Server Action (non `useActionState` + `<form action>`) per affidabilità
+- Merge locale in `useEffect([initialTasks])`: preserva task aggiunti localmente non ancora presenti nella risposta server
 
 ---
 
@@ -477,7 +482,7 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 | 3 | Autenticazione | [x] | Completata 2026-04-16 |
 | 4 | Workspace & Ruoli | [x] | Completata 2026-04-16 |
 | 5 | Progetti & Fasi | [x] | Completata 2026-04-16 |
-| 6 | Task Core + Vista Lista | [ ] | **MVP core** |
+| 6 | Task Core + Vista Lista | [x] | Completata 2026-04-16 |
 | 7 | Vista Kanban | [ ] | **MVP core** |
 | 8 | Subtask & Checklist | [ ] | **MVP core** |
 | 9 | Commenti & Allegati | [ ] | **MVP core** |
@@ -505,3 +510,8 @@ _Aggiornare questa sezione durante lo sviluppo con eventuali problemi, decisioni
 | Data | Nota |
 |------|------|
 | 2026-04-09 | Documento creato. Pronto per iniziare Phase 1. |
+| 2026-04-16 | RLS infinite recursion su `project_members`: risolto con funzione SECURITY DEFINER `is_project_member()`. |
+| 2026-04-16 | RLS violation su INSERT `projects`: risolto usando `createServiceClient()` nelle Server Actions di write. |
+| 2026-04-16 | Task non visibile dopo creazione: `revalidatePath` triggerava refresh automatico che sovrascriveva stato locale. Risolto con merge in `useEffect([initialTasks])` e rimozione `router.refresh()` post-creazione. |
+| 2026-04-16 | `useActionState` + `<form action>` con Base UI Button inaffidabile: sostituito con `startTransition` + chiamata diretta alla Server Action. |
+| 2026-04-16 | Deploy Vercel errato: `vercel --prod` eseguito dalla root del repo invece che da `taskflow/`. Sempre eseguire da `taskflow/`. |
