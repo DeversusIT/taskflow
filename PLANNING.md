@@ -1,7 +1,7 @@
 # TaskFlow — Project Planning
 
-**Status:** 🟢 In Sviluppo — Phase 3  
-**Ultimo aggiornamento:** 2026-04-09  
+**Status:** 🟢 In Sviluppo — Phase 5  
+**Ultimo aggiornamento:** 2026-04-16  
 **Stack:** Next.js 14 + TypeScript + Supabase + Vercel  
 **Documento di riferimento:** `PRD.md` | Regole sviluppo: `CLAUDE.md`
 
@@ -92,18 +92,18 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 
 **Obiettivo:** flusso auth completo funzionante.
 
-- [ ] Layout pagine auth `(auth)/layout.tsx` (no sidebar, centrato)
-- [ ] Pagina `/login`: form email + password, link reset password
-- [ ] Pagina `/register`: form nome + email + password, validazione Zod
-- [ ] Pagina `/reset-password`: richiesta email + form nuova password
-- [ ] Gestione callback Supabase Auth (`/auth/callback/route.ts`)
-- [ ] Redirect post-login → `/` (che redirige al workspace)
-- [ ] Pagina profilo utente: modifica nome, avatar (upload Supabase Storage), cambio password
-- [ ] Preferenze utente: tema (light/dark/system), timezone, preferenze notifiche email
+- [x] Layout pagine auth `(auth)/layout.tsx` (no sidebar, centrato)
+- [x] Pagina `/login`: form email + password, link reset password
+- [x] Pagina `/register`: form nome + email + password, validazione Zod
+- [x] Pagina `/reset-password`: richiesta email + form nuova password
+- [x] Gestione callback Supabase Auth (`/auth/callback/route.ts`)
+- [x] Redirect post-login → `/` (che redirige al workspace)
+- [-] Pagina profilo utente: modifica nome, avatar (upload Supabase Storage), cambio password — rimandato a V2
+- [-] Preferenze utente: tema/timezone/notifiche — rimandato a V2
 
-**Componenti:** `LoginForm`, `RegisterForm`, `ResetPasswordForm`, `ProfileForm`, `AvatarUpload`
+**Componenti:** `LoginForm`, `RegisterForm`, `RequestResetForm`, `UpdatePasswordForm`
 
-**Verifica:** register → email verifica → login → reset password funzionanti end-to-end. Middleware blocca route protette senza sessione.
+**Verifica:** register → email verifica → login → reset password funzionanti end-to-end. Middleware blocca route protette senza sessione. ✅ Completata 2026-04-16
 
 ---
 
@@ -111,17 +111,17 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 
 **Obiettivo:** gestione completa del workspace e dei ruoli.
 
-- [ ] Creazione workspace automatica al primo login del super_admin
-- [ ] Pagina impostazioni workspace (nome, logo)
-- [ ] Pagina gestione membri (`/workspace/members`):
+- [x] Creazione workspace automatica al primo login del super_admin
+- [x] Pagina impostazioni workspace (nome, logo)
+- [x] Pagina gestione membri (`/workspace/members`):
   - Lista utenti con ruolo e data iscrizione
   - Form invito via email (genera link temporaneo 7 giorni)
   - Modifica ruolo utente
   - Disabilitazione/riabilitazione account
-- [ ] Email di invito (template React Email)
-- [ ] Pagina accettazione invito (`/invite/[token]`)
-- [ ] Hook custom `useUserRole()` — accesso al ruolo corrente in qualsiasi componente
-- [ ] Componente `PermissionGate` — mostra/nasconde UI in base al ruolo
+- [-] Email di invito (template React Email) — Supabase built-in invite email usata
+- [-] Pagina accettazione invito (`/invite/[token]`) — gestito via user_metadata + callback
+- [x] Hook custom `useUserRole()` — accesso al ruolo corrente in qualsiasi componente
+- [x] Componente `PermissionGate` — mostra/nasconde UI in base al ruolo
 
 **Componenti:** `MemberList`, `MemberRow`, `InviteForm`, `RoleBadge`, `PermissionGate`
 
@@ -133,16 +133,16 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 
 **Obiettivo:** CRUD completo di progetti e fasi con ordinamento.
 
-- [ ] Sidebar: lista progetti con drag handle per riordinamento manuale
-- [ ] Pagina creazione/modifica progetto (modal o pagina dedicata)
-  - Campi: nome, descrizione, colore, data inizio/fine, stato
-  - Assegnazione membri con ruolo
-- [ ] Gestione fasi: drag & drop per riordino, CRUD inline
-- [ ] Archivio progetti (lista separata, recupero possibile)
-- [ ] Correlazione tra progetti (campo "progetti correlati")
-- [ ] API: `GET/POST /api/projects`, `GET/PUT/DELETE /api/projects/[id]`
-- [ ] API: `GET/POST/PUT/DELETE /api/projects/[id]/phases`
-- [ ] Pagina impostazioni progetto (`/projects/[id]/settings`): modifica, archivia, elimina, membri
+- [x] Sidebar: lista progetti con drag handle per riordinamento manuale
+- [x] Pagina creazione/modifica progetto (modal nella sidebar)
+  - Campi: nome, descrizione, colore, data inizio/fine
+  - [-] Assegnazione membri con ruolo — rimandato a V2
+- [x] Gestione fasi: drag & drop per riordino, CRUD inline
+- [x] Archivio progetti (archivio via impostazioni progetto)
+- [-] Correlazione tra progetti — rimandato a V2
+- [x] API: `GET/POST /api/projects`, `GET/PUT/DELETE /api/projects/[id]`
+- [x] API: `GET/POST/PUT/DELETE /api/projects/[id]/phases`
+- [x] Pagina impostazioni progetto (`/projects/[id]/settings`): modifica, archivia, elimina, fasi
 
 **Componenti:** `ProjectCard`, `ProjectForm`, `ProjectSidebar`, `PhaseList`, `PhaseItem`, `ProjectMemberManager`
 
@@ -474,9 +474,9 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 |---|------|-------|------|
 | 1 | Foundation & Setup | [x] | Completata 2026-04-09 |
 | 2 | Schema Database | [x] | Completata 2026-04-09 |
-| 3 | Autenticazione | [ ] | |
-| 4 | Workspace & Ruoli | [ ] | |
-| 5 | Progetti & Fasi | [ ] | |
+| 3 | Autenticazione | [x] | Completata 2026-04-16 |
+| 4 | Workspace & Ruoli | [x] | Completata 2026-04-16 |
+| 5 | Progetti & Fasi | [x] | Completata 2026-04-16 |
 | 6 | Task Core + Vista Lista | [ ] | **MVP core** |
 | 7 | Vista Kanban | [ ] | **MVP core** |
 | 8 | Subtask & Checklist | [ ] | **MVP core** |
