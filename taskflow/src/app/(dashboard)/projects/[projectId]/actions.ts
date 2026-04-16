@@ -72,7 +72,7 @@ export async function createTaskAction(
     return { error: error?.message ?? 'Errore creazione task' }
   }
 
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}`, 'layout')
   return { error: null, newTask: task as NewTaskData }
 }
 
@@ -109,14 +109,14 @@ export async function updateTaskAction(
 
   if (error) return { error: error.message }
 
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}`, 'layout')
   return { error: null }
 }
 
 export async function deleteTaskAction(taskId: string, projectId: string): Promise<void> {
   const serviceClient = createServiceClient()
   await serviceClient.from('tasks').delete().eq('id', taskId)
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}`, 'layout')
 }
 
 export async function assignTaskAction(
@@ -128,7 +128,7 @@ export async function assignTaskAction(
   await serviceClient
     .from('task_assignments')
     .upsert({ task_id: taskId, user_id: userId }, { onConflict: 'task_id,user_id' })
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}`, 'layout')
 }
 
 export async function unassignTaskAction(
@@ -137,7 +137,7 @@ export async function unassignTaskAction(
 ): Promise<void> {
   const serviceClient = createServiceClient()
   await serviceClient.from('task_assignments').delete().eq('id', assignmentId)
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}`, 'layout')
 }
 
 export async function bulkUpdateStatusAction(
@@ -150,11 +150,11 @@ export async function bulkUpdateStatusAction(
     .from('tasks')
     .update({ status, updated_at: new Date().toISOString() })
     .in('id', taskIds)
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}`, 'layout')
 }
 
 export async function bulkDeleteTasksAction(taskIds: string[], projectId: string): Promise<void> {
   const serviceClient = createServiceClient()
   await serviceClient.from('tasks').delete().in('id', taskIds)
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath(`/projects/${projectId}`, 'layout')
 }
