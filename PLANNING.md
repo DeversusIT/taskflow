@@ -188,19 +188,27 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 
 **Obiettivo:** board Kanban con drag & drop tra colonne.
 
-- [ ] Board con 4 colonne fisse (stati task)
-- [ ] Card task: titolo, avatar assegnatari, badge priorità, scadenza, contatore commenti/allegati
-- [ ] DnD tra colonne con @dnd-kit (aggiorna stato in DB al drop)
-- [ ] DnD per riordinamento all'interno della stessa colonna
-- [ ] Aggiornamento ottimistico UI (non attendere risposta DB)
-- [ ] Tasto "Aggiungi task" in ogni colonna (quick-add)
-- [ ] Filtri sulla board (stesso set vista lista)
-- [ ] Limit visibile card per colonna con "load more"
-- [ ] Indicatore visivo task in ritardo (bordo rosso o icona)
+- [x] Board con 4 colonne fisse (stati task)
+- [x] Card task: titolo, avatar assegnatari, badge priorità, scadenza, fase
+- [x] DnD tra colonne con @dnd-kit (aggiorna stato in DB al drop)
+- [-] DnD per riordinamento all'interno della stessa colonna — rimandato V2 (order_index è project-wide, non per-status)
+- [x] Aggiornamento ottimistico UI (status change applicato in `onDragOver`)
+- [x] Tasto "Aggiungi task" in ogni colonna (quick-add)
+- [x] Filtri sulla board (priorità, fase — status implicito nelle colonne)
+- [-] Limit visibile card per colonna con "load more" — rimandato V2
+- [x] Indicatore visivo task in ritardo (bordo sinistro destructive)
+- [x] Tab switcher Lista/Kanban nell'header del progetto
 
-**Componenti:** `KanbanBoard`, `KanbanColumn`, `KanbanCard`, `DragOverlay`
+**Componenti:** `KanbanBoard`, `KanbanColumn`, `KanbanCard` (tutti in `kanban-board.tsx`), `ProjectViewTabs`, `DragOverlay`
 
-**Verifica:** drag & drop funzionante, stato aggiornato in DB, aggiornamento ottimistico senza flickering, filtri applicati correttamente.
+**Verifica:** drag & drop funzionante, stato aggiornato in DB, aggiornamento ottimistico senza flickering, filtri applicati correttamente. ✅ Completata 2026-04-16
+
+**Note implementazione:**
+- `KanbanBoard` riusa pattern merge `useEffect([initialTasks])` dal `TaskList` (preserva task aggiunti localmente)
+- `PointerSensor` con `activationConstraint: { distance: 5 }` per evitare che click aprano panel durante drag-intent
+- `onDragOver` muta ottimisticamente lo status per feedback immediato; `onDragEnd` persiste via `updateTaskAction` solo se lo status è cambiato rispetto a `initialTasks`
+- `useDroppable` su container colonna per permettere drop su colonne vuote
+- Quick-add per colonna usa `createTaskAction` con `status: column.id` preset
 
 ---
 
@@ -483,7 +491,7 @@ Configurare in `.env.local` (locale) e nel dashboard Vercel (produzione).
 | 4 | Workspace & Ruoli | [x] | Completata 2026-04-16 |
 | 5 | Progetti & Fasi | [x] | Completata 2026-04-16 |
 | 6 | Task Core + Vista Lista | [x] | Completata 2026-04-16 |
-| 7 | Vista Kanban | [ ] | **MVP core** |
+| 7 | Vista Kanban | [x] | Completata 2026-04-16 |
 | 8 | Subtask & Checklist | [ ] | **MVP core** |
 | 9 | Commenti & Allegati | [ ] | **MVP core** |
 | 10 | Notifiche In-App | [ ] | **MVP core** |

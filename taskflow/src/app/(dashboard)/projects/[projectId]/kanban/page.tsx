@@ -4,18 +4,19 @@ import { Settings } from 'lucide-react'
 import { getProject, getProjectPhases } from '@/lib/queries/projects'
 import { getProjectTasks } from '@/lib/queries/tasks'
 import { getWorkspaceMembers } from '@/lib/queries/workspace'
-import { TaskList } from '@/components/tasks/task-list'
+import { KanbanBoard } from '@/components/tasks/kanban-board'
 import { ProjectViewTabs } from '@/components/tasks/project-view-tabs'
 import { createClient } from '@/lib/supabase/server'
 
 type Props = { params: Promise<{ projectId: string }> }
 
-export default async function ProjectPage({ params }: Props) {
+export default async function ProjectKanbanPage({ params }: Props) {
   const { projectId } = await params
 
-  // Get workspace id for member list
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) notFound()
 
   const { data: memberRow } = await supabase
@@ -36,7 +37,6 @@ export default async function ProjectPage({ params }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span
@@ -60,8 +60,7 @@ export default async function ProjectPage({ params }: Props) {
 
       <ProjectViewTabs projectId={projectId} />
 
-      {/* Task list */}
-      <TaskList
+      <KanbanBoard
         initialTasks={tasks}
         projectId={projectId}
         phases={phases}
