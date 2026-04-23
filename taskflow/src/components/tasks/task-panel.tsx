@@ -62,7 +62,7 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
     if (task && titleRef.current) {
       titleRef.current.focus()
     }
-  }, [task?.id])
+  }, [task])
 
   if (!task || !localTask) return null
 
@@ -148,8 +148,9 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
           {/* Title */}
           <Input
             ref={titleRef}
-            defaultValue={localTask.title}
+            value={localTask.title}
             className="border-0 px-0 text-xl font-semibold shadow-none focus-visible:ring-0"
+            onChange={(e) => setLocalTask((prev) => prev ? { ...prev, title: e.target.value } : null)}
             onBlur={(e) => {
               if (e.target.value !== task.title && e.target.value.trim()) {
                 handleFieldChange('title', e.target.value.trim())
@@ -161,10 +162,11 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Descrizione</Label>
             <Textarea
-              defaultValue={localTask.description ?? ''}
+              value={localTask.description ?? ''}
               rows={4}
               placeholder="Aggiungi una descrizione…"
               className="resize-none text-sm"
+              onChange={(e) => setLocalTask((prev) => prev ? { ...prev, description: e.target.value || null } : null)}
               onBlur={(e) => {
                 const val = e.target.value || null
                 if (val !== task.description) {
@@ -236,8 +238,9 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
               <Label className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Scadenza</Label>
               <Input
                 type="date"
-                defaultValue={localTask.due_date ?? ''}
+                value={localTask.due_date ?? ''}
                 className="text-sm"
+                onChange={(e) => setLocalTask((prev) => prev ? { ...prev, due_date: e.target.value || null } : null)}
                 onBlur={(e) => {
                   const val = e.target.value || null
                   if (val !== task.due_date) handleFieldChange('due_date', val)
@@ -250,8 +253,9 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
                 type="number"
                 min="0"
                 step="0.5"
-                defaultValue={localTask.estimated_hours ?? ''}
+                value={localTask.estimated_hours ?? ''}
                 className="text-sm"
+                onChange={(e) => setLocalTask((prev) => prev ? { ...prev, estimated_hours: e.target.value ? parseFloat(e.target.value) : null } : null)}
                 onBlur={(e) => {
                   const val = e.target.value ? parseFloat(e.target.value) : null
                   if (val !== task.estimated_hours) handleFieldChange('estimated_hours', val)
@@ -265,14 +269,18 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
             <Label className="text-xs text-muted-foreground">Assegnato a</Label>
             <div className="space-y-1">
               {members.map((member) => {
-                const assigned = localTask.assignees.some((a) => a.userId === member.userId)
+                const assignee = localTask.assignees.find((a) => a.userId === member.userId)
+                const assigned = !!assignee
+                const isPending = assignee?.assignmentId === 'pending'
                 return (
                   <button
                     key={member.userId}
                     onClick={() => handleAssignToggle(member)}
+                    disabled={isPending}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
                       assigned ? 'bg-accent' : 'hover:bg-accent/50',
+                      isPending && 'cursor-wait opacity-60',
                     )}
                   >
                     <Avatar className="h-6 w-6">

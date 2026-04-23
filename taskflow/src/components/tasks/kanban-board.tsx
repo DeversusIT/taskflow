@@ -64,7 +64,7 @@ function initials(name: string, email: string) {
 
 function isLate(due: string | null, status: Status): boolean {
   if (!due || status === 'completed') return false
-  const d = new Date(due + 'T00:00:00')
+  const d = new Date(due + 'T00:00:00Z')
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return d < today

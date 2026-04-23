@@ -36,7 +36,7 @@ function getInitials(name: string, email: string) {
 
 function formatDate(d: string | null) {
   if (!d) return null
-  const date = new Date(d + 'T00:00:00')
+  const date = new Date(d + 'T00:00:00Z')
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const isOverdue = date < today
