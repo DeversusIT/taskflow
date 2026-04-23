@@ -100,6 +100,7 @@ export default async function ProjectKanbanPage({ params }: Props) {
         projectId={projectId}
         phases={phases}
         members={members}
+        currentUserId={user.id}
       />
     </div>
   )

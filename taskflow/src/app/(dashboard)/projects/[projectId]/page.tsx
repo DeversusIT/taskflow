@@ -170,6 +170,7 @@ export default async function ProjectPage({ params }: Props) {
         projectId={projectId}
         phases={phases}
         members={members}
+        currentUserId={user.id}
       />
     </div>
   )

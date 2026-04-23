@@ -304,12 +304,12 @@ function FilterBar({ filters, phases, onChange }: { filters: Filters; phases: Ph
 }
 
 // ─── Main TaskList ────────────────────────────────────────────────────────────
-type Props = { initialTasks: Task[]; projectId: string; phases: Phase[]; members: WorkspaceMember[] }
+type Props = { initialTasks: Task[]; projectId: string; phases: Phase[]; members: WorkspaceMember[]; currentUserId: string }
 
 const GRID = '28px 1fr 130px 100px 120px 90px'
 const HEADER_COLS = ['Titolo', 'Stato', 'Priorità', 'Fase', 'Scadenza']
 
-export function TaskList({ initialTasks, projectId, phases, members }: Props) {
+export function TaskList({ initialTasks, projectId, phases, members, currentUserId }: Props) {
   const router = useRouter()
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [openTask, setOpenTask] = useState<Task | null>(null)
@@ -607,6 +607,7 @@ export function TaskList({ initialTasks, projectId, phases, members }: Props) {
           projectId={projectId}
           phases={phases}
           members={members}
+          currentUserId={currentUserId}
           onClose={() => setOpenTask(null)}
           onTaskUpdated={(updated) => {
             setTasks((prev) => prev.map((t) => t.id === updated.id ? updated : t))

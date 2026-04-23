@@ -15,6 +15,8 @@ import { toast } from 'sonner'
 import { updateTaskAction, deleteTaskAction, assignTaskAction, unassignTaskAction } from '@/app/(dashboard)/projects/[projectId]/actions'
 import { SubtaskSection } from '@/components/tasks/subtask-section'
 import { ChecklistSection } from '@/components/tasks/checklist-section'
+import { CommentList } from '@/components/comments/comment-list'
+import { AttachmentList } from '@/components/attachments/attachment-list'
 import { StatusBadge } from '@/components/shared/status-badge'
 import { PriorityBadge } from '@/components/shared/priority-badge'
 import type { Task, TaskAssignee } from '@/lib/queries/tasks'
@@ -31,12 +33,13 @@ type Props = {
   projectId: string
   phases: Phase[]
   members: WorkspaceMember[]
+  currentUserId: string
   onClose: () => void
   onTaskUpdated: (task: Task) => void
   onTaskDeleted: (taskId: string) => void
 }
 
-export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpdated, onTaskDeleted }: Props) {
+export function TaskPanel({ task, projectId, phases, members, currentUserId, onClose, onTaskUpdated, onTaskDeleted }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
   const [localTask, setLocalTask] = useState<Task | null>(task)
@@ -427,11 +430,22 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
           <SubtaskSection parentTaskId={localTask.id} projectId={projectId} />
           <ChecklistSection taskId={localTask.id} projectId={projectId} />
 
-          {/* Comments placeholder */}
-          <div className="uppercase-xs" style={{ margin: '22px 0 8px' }}>Commenti</div>
-          <p style={{ fontSize: 12, color: 'var(--tf-muted)', fontStyle: 'italic' }}>
-            Disponibile nella prossima fase.
-          </p>
+          <div style={{ borderTop: '1px solid var(--tf-line)', margin: '22px 0' }} />
+
+          <AttachmentList
+            taskId={localTask.id}
+            projectId={projectId}
+            currentUserId={currentUserId}
+          />
+
+          <div style={{ borderTop: '1px solid var(--tf-line)', margin: '22px 0' }} />
+
+          <CommentList
+            taskId={localTask.id}
+            projectId={projectId}
+            currentUserId={currentUserId}
+            members={members}
+          />
         </div>
       </div>
     </>
