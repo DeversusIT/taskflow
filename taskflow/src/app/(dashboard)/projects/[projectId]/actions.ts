@@ -54,6 +54,14 @@ export async function createTaskAction(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autenticato' }
 
+  const { data: membership } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!membership) return { error: 'Accesso negato' }
+
   const serviceClient = createServiceClient()
 
   const { count } = await serviceClient
@@ -106,11 +114,20 @@ export async function updateTaskAction(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autenticato' }
 
+  const { data: membership } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!membership) return { error: 'Accesso negato' }
+
   const serviceClient = createServiceClient()
   const { error } = await serviceClient
     .from('tasks')
     .update({ ...result.data, updated_at: new Date().toISOString() })
     .eq('id', taskId)
+    .eq('project_id', projectId)
 
   if (error) return { error: error.message }
 
@@ -127,6 +144,14 @@ export async function deleteTaskAction(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autenticato' }
+
+  const { data: membership } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!membership) return { error: 'Accesso negato' }
 
   const { error } = await supabase.from('tasks').delete().eq('id', taskId)
   if (error) return { error: error.message }
@@ -145,6 +170,14 @@ export async function assignTaskAction(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autenticato' }
+
+  const { data: membership } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!membership) return { error: 'Accesso negato' }
 
   const { error } = await supabase
     .from('task_assignments')
@@ -165,6 +198,14 @@ export async function unassignTaskAction(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autenticato' }
 
+  const { data: membership } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!membership) return { error: 'Accesso negato' }
+
   const { error } = await supabase.from('task_assignments').delete().eq('id', assignmentId)
   if (error) return { error: error.message }
 
@@ -182,6 +223,14 @@ export async function bulkUpdateStatusAction(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autenticato' }
+
+  const { data: membership } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!membership) return { error: 'Accesso negato' }
 
   const { error } = await supabase
     .from('tasks')
@@ -202,6 +251,14 @@ export async function bulkDeleteTasksAction(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Non autenticato' }
+
+  const { data: membership } = await supabase
+    .from('project_members')
+    .select('role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+  if (!membership) return { error: 'Accesso negato' }
 
   const { error } = await supabase.from('tasks').delete().in('id', taskIds)
   if (error) return { error: error.message }
