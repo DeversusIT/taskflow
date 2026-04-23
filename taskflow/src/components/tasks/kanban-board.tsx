@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, ListChecks } from 'lucide-react'
+import { Plus, ListChecks, X } from 'lucide-react'
 import {
   DndContext,
   DragOverlay,
@@ -25,8 +25,6 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { PriorityBadge } from '@/components/shared/priority-badge'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -43,16 +41,20 @@ import {
 import type { Task } from '@/lib/queries/tasks'
 import type { Phase } from '@/lib/queries/projects'
 import type { WorkspaceMember } from '@/lib/queries/workspace'
-import { cn } from '@/lib/utils'
 
 type Status = Task['status']
-type ColumnDef = { id: Status; label: string; accent: string }
+
+type ColumnDef = {
+  id: Status
+  label: string
+  color: string
+}
 
 const COLUMNS: ColumnDef[] = [
-  { id: 'open', label: 'Aperta', accent: 'border-t-blue-500' },
-  { id: 'in_progress', label: 'In corso', accent: 'border-t-purple-500' },
-  { id: 'on_hold', label: 'Sospesa', accent: 'border-t-gray-500' },
-  { id: 'completed', label: 'Conclusa', accent: 'border-t-green-500' },
+  { id: 'open',        label: 'Aperta',   color: '#2E5BFF' },
+  { id: 'in_progress', label: 'In corso', color: '#7C3AED' },
+  { id: 'on_hold',     label: 'Sospesa',  color: '#9A9A9A' },
+  { id: 'completed',   label: 'Conclusa', color: '#00C26E' },
 ]
 
 const COLUMN_IDS = new Set<string>(COLUMNS.map((c) => c.id))
@@ -70,9 +72,20 @@ function isLate(due: string | null, status: Status): boolean {
   return d < today
 }
 
-function formatDue(due: string | null): string | null {
+function formatDue(due: string | null): { label: string; overdue: boolean } | null {
   if (!due) return null
-  return new Date(due + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })
+  const date = new Date(due + 'T00:00:00Z')
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diff = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  const overdue = diff < 0
+  const months = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic']
+  let label: string
+  if (diff === 0) label = 'Oggi'
+  else if (diff === 1) label = 'Domani'
+  else if (diff === -1) label = 'Ieri'
+  else label = `${date.getDate()} ${months[date.getMonth()]}`
+  return { label, overdue }
 }
 
 // ─── Card ───────────────────────────────────────────────────────────────────
@@ -97,66 +110,76 @@ function KanbanCard({
   }
 
   const phase = task.phase_id ? phases.find((p) => p.id === task.phase_id) : null
-  const late = isLate(task.due_date, task.status)
   const due = formatDue(task.due_date)
+  const late = isLate(task.due_date, task.status)
+  const isCompleted = task.status === 'completed'
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        ...style,
+        background: 'var(--tf-panel)',
+        border: late ? `3px solid var(--tf-red)` : '1px solid var(--tf-line)',
+        borderRadius: 10,
+        padding: 12,
+        cursor: 'grab',
+        boxShadow: 'var(--tf-shadow-1)',
+      }}
       {...attributes}
       {...listeners}
       onClick={() => onOpen(task)}
-      className={cn(
-        'rounded-md border bg-background p-3 shadow-sm cursor-grab active:cursor-grabbing transition-colors hover:bg-accent/40',
-        late && 'border-l-4 border-l-destructive',
-      )}
+      onMouseEnter={(e) => {
+        const el = e.currentTarget
+        el.style.borderColor = late ? 'var(--tf-red)' : '#BDB9AE'
+        el.style.transform = `${style.transform ?? ''} translateY(-1px)`
+      }}
+      onMouseLeave={(e) => {
+        const el = e.currentTarget
+        el.style.borderColor = late ? 'var(--tf-red)' : 'var(--tf-line)'
+        el.style.transform = style.transform ?? ''
+      }}
     >
       <p
-        className={cn(
-          'text-sm mb-2 font-medium break-words',
-          task.status === 'completed' && 'line-through opacity-70',
-        )}
+        style={{
+          fontSize: 13.5,
+          fontWeight: 700,
+          lineHeight: 1.35,
+          marginBottom: 10,
+          margin: '0 0 10px',
+          textDecoration: isCompleted ? 'line-through' : 'none',
+          color: isCompleted ? 'var(--tf-muted)' : 'var(--tf-ink)',
+        }}
       >
         {task.title}
       </p>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <PriorityBadge priority={task.priority} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <PriorityBadge priority={task.priority} size="sm" />
           {phase && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground truncate">
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: phase.color }}
-              />
-              <span className="truncate">{phase.name}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: 'var(--tf-muted)', overflow: 'hidden' }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: phase.color, flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{phase.name}</span>
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {due && (
-            <span
-              className={cn(
-                'text-xs whitespace-nowrap',
-                late && 'text-destructive font-medium',
-              )}
-            >
-              {due}
+            <span style={{ fontSize: 11, fontWeight: 700, color: due.overdue ? 'var(--tf-red)' : 'var(--tf-muted)', whiteSpace: 'nowrap' }}>
+              {due.label}
             </span>
           )}
           {task.subtask_count > 0 && (
-            <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
-              <ListChecks className="h-3 w-3" />
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--tf-muted)' }}>
+              <ListChecks style={{ width: 12, height: 12 }} />
               {task.subtask_count}
             </span>
           )}
           {task.assignees.length > 0 && (
-            <div className="flex -space-x-1.5">
-              {task.assignees.slice(0, 3).map((a) => (
-                <Avatar key={a.assignmentId} className="h-5 w-5 border border-background">
-                  <AvatarFallback className="text-[10px]">
-                    {initials(a.fullName, a.email)}
-                  </AvatarFallback>
+            <div style={{ display: 'flex' }}>
+              {task.assignees.slice(0, 3).map((a, i) => (
+                <Avatar key={a.assignmentId} className="h-5 w-5 border border-background" style={{ marginLeft: i === 0 ? 0 : -6 }}>
+                  <AvatarFallback className="text-[10px]">{initials(a.fullName, a.email)}</AvatarFallback>
                 </Avatar>
               ))}
             </div>
@@ -188,7 +211,7 @@ function KanbanColumn({
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (adding) setTimeout(() => inputRef.current?.focus(), 50)
+    if (adding) setTimeout(() => inputRef.current?.focus(), 30)
   }, [adding])
 
   async function submit() {
@@ -203,85 +226,160 @@ function KanbanColumn({
 
   return (
     <div
-      className={cn(
-        'flex flex-col rounded-lg border border-t-2 bg-muted/20 min-h-[60vh] transition-colors',
-        column.accent,
-        isOver && 'bg-accent/30',
-      )}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        background: isOver ? '#EFEBE1' : 'var(--tf-bg)',
+        border: '1px solid var(--tf-line)',
+        borderTop: `3px solid ${column.color}`,
+        borderRadius: 12,
+        minHeight: 520,
+        transition: 'background 140ms var(--tf-ease)',
+      }}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">{column.label}</span>
-          <span className="rounded-full bg-background px-2 py-0.5 text-xs text-muted-foreground">
+      {/* Column header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 14px',
+          borderBottom: '1px solid var(--tf-line)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.02em' }}>{column.label}</span>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: 22,
+              height: 20,
+              padding: '0 7px',
+              borderRadius: 999,
+              background: 'var(--tf-panel)',
+              border: '1px solid var(--tf-line)',
+              fontSize: 11,
+              fontWeight: 700,
+              color: 'var(--tf-muted)',
+            }}
+          >
             {tasks.length}
           </span>
         </div>
+        <button
+          onClick={() => setAdding(true)}
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 5,
+            color: 'var(--tf-muted)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--tf-hover)'; e.currentTarget.style.color = 'var(--tf-ink)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tf-muted)' }}
+        >
+          <Plus style={{ width: 14, height: 14 }} strokeWidth={2.2} />
+        </button>
       </div>
 
+      {/* Cards */}
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-        <div ref={setNodeRef} className="flex flex-col gap-2 p-2 flex-1 overflow-y-auto">
+        <div ref={setNodeRef} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, flex: 1, overflowY: 'auto' }}>
           {tasks.map((t) => (
             <KanbanCard key={t.id} task={t} phases={phases} onOpen={onOpen} />
           ))}
           {tasks.length === 0 && !adding && (
-            <p className="text-xs text-muted-foreground text-center py-6">Nessun task</p>
+            <p style={{ padding: '24px 8px', textAlign: 'center', fontSize: 12, color: 'var(--tf-muted-2)', fontWeight: 600 }}>
+              Nessun task
+            </p>
+          )}
+          {adding && (
+            <div
+              style={{
+                background: 'var(--tf-panel)',
+                border: '1px solid var(--tf-ink)',
+                borderRadius: 10,
+                padding: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <input
+                ref={inputRef}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); void submit() }
+                  if (e.key === 'Escape' && !saving) { setAdding(false); setValue('') }
+                }}
+                placeholder="Titolo…"
+                style={{
+                  border: 'none',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: 4,
+                  fontFamily: 'inherit',
+                  color: 'inherit',
+                  background: 'transparent',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={submit}
+                  disabled={!value.trim() || saving}
+                  style={{
+                    flex: 1,
+                    height: 28,
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: 'var(--tf-ink)',
+                    color: '#fff',
+                    border: 'none',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {saving ? '…' : 'Aggiungi'}
+                </button>
+                <button
+                  disabled={saving}
+                  onClick={() => { setAdding(false); setValue('') }}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    border: '1px solid var(--tf-line)',
+                    background: 'transparent',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--tf-muted)',
+                  }}
+                >
+                  <X style={{ width: 13, height: 13 }} />
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </SortableContext>
-
-      <div className="border-t p-2">
-        {!adding ? (
-          <button
-            onClick={() => setAdding(true)}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          >
-            <Plus className="h-3 w-3" />
-            Aggiungi task
-          </button>
-        ) : (
-          <div className="flex items-center gap-1">
-            <Input
-              ref={inputRef}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') { e.preventDefault(); void submit() }
-                if (e.key === 'Escape' && !saving) {
-                  setAdding(false)
-                  setValue('')
-                }
-              }}
-              placeholder="Titolo…"
-              className="h-7 text-xs"
-            />
-            <Button size="sm" onClick={submit} disabled={!value.trim() || saving}>
-              {saving ? '…' : '+'}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={saving}
-              onClick={() => {
-                setAdding(false)
-                setValue('')
-              }}
-            >
-              ✕
-            </Button>
-          </div>
-        )}
-      </div>
     </div>
   )
 }
 
-// ─── Main Board ─────────────────────────────────────────────────────────────
-type Props = {
-  initialTasks: Task[]
-  projectId: string
-  phases: Phase[]
-  members: WorkspaceMember[]
+// ─── Filters ────────────────────────────────────────────────────────────────
+const PRIORITY_LABELS: Record<string, string> = {
+  all: 'Tutte le priorità', low: 'Bassa', medium: 'Media', high: 'Alta', urgent: 'Urgente',
 }
+
+// ─── Main Board ─────────────────────────────────────────────────────────────
+type Props = { initialTasks: Task[]; projectId: string; phases: Phase[]; members: WorkspaceMember[] }
 
 export function KanbanBoard({ initialTasks, projectId, phases, members }: Props) {
   const router = useRouter()
@@ -297,9 +395,7 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
       const serverIds = new Set(initialTasks.map((t) => t.id))
       const localOnly = prev.filter((t) => !serverIds.has(t.id))
       const serverMap = new Map(initialTasks.map((t) => [t.id, t]))
-      const merged = prev
-        .filter((t) => serverIds.has(t.id))
-        .map((t) => serverMap.get(t.id) ?? t)
+      const merged = prev.filter((t) => serverIds.has(t.id)).map((t) => serverMap.get(t.id) ?? t)
       const newFromServer = initialTasks.filter((t) => !prev.some((p) => p.id === t.id))
       return [...merged, ...newFromServer, ...localOnly]
     })
@@ -320,12 +416,7 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
   }, [tasks, priorityFilter, phaseFilter])
 
   const tasksByStatus = useMemo(() => {
-    const map: Record<Status, Task[]> = {
-      open: [],
-      in_progress: [],
-      on_hold: [],
-      completed: [],
-    }
+    const map: Record<Status, Task[]> = { open: [], in_progress: [], on_hold: [], completed: [] }
     for (const t of filtered) map[t.status].push(t)
     return map
   }, [filtered])
@@ -338,41 +429,30 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
   function handleDragOver(e: DragOverEvent) {
     const { active, over } = e
     if (!over) return
-
     const activeId = String(active.id)
     const overId = String(over.id)
     if (activeId === overId) return
-
     const activeT = tasks.find((t) => t.id === activeId)
     if (!activeT) return
-
     const targetStatus: Status = COLUMN_IDS.has(overId)
       ? (overId as Status)
       : (tasks.find((t) => t.id === overId)?.status ?? activeT.status)
-
     if (activeT.status === targetStatus) return
-
-    setTasks((prev) =>
-      prev.map((t) => (t.id === activeId ? { ...t, status: targetStatus } : t)),
-    )
+    setTasks((prev) => prev.map((t) => (t.id === activeId ? { ...t, status: targetStatus } : t)))
   }
 
   function handleDragEnd(e: DragEndEvent) {
     const { active } = e
     setActiveTask(null)
-
     const activeId = String(active.id)
     const current = tasks.find((t) => t.id === activeId)
     const original = initialTasks.find((t) => t.id === activeId)
     if (!current || !original) return
-
     if (original.status !== current.status) {
       startTransition(async () => {
         const { error } = await updateTaskAction(activeId, projectId, { status: current.status })
         if (error) {
-          setTasks((prev) =>
-            prev.map((t) => (t.id === activeId ? { ...t, status: original.status } : t)),
-          )
+          setTasks((prev) => prev.map((t) => (t.id === activeId ? { ...t, status: original.status } : t)))
           toast.error('Errore aggiornamento stato task')
         }
       })
@@ -385,33 +465,29 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
     formData.set('status', status)
     formData.set('priority', 'medium')
     const res = await createTaskAction(projectId, { error: null }, formData)
-    if (res.error) {
-      toast.error(res.error)
-      return
-    }
+    if (res.error) { toast.error(res.error); return }
     if (res.newTask) {
       setTasks((prev) => [...prev, { ...res.newTask!, assignees: [], subtask_count: 0 }])
       router.refresh()
     }
   }
 
+  const hasFilters = priorityFilter !== 'all' || phaseFilter !== 'all'
+
   return (
-    <div className="space-y-3">
+    <div>
       {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Select
-          value={priorityFilter}
-          onValueChange={(v) => v && setPriorityFilter(v)}
-        >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        <Select value={priorityFilter} onValueChange={(v) => v && setPriorityFilter(v)}>
           <SelectTrigger size="sm">
-            <SelectValue placeholder="Priorità" />
+            <SelectValue>
+              <span style={{ fontWeight: 700 }}>{PRIORITY_LABELS[priorityFilter]}</span>
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutte le priorità</SelectItem>
-            <SelectItem value="urgent">Urgente</SelectItem>
-            <SelectItem value="high">Alta</SelectItem>
-            <SelectItem value="medium">Media</SelectItem>
-            <SelectItem value="low">Bassa</SelectItem>
+            {Object.entries(PRIORITY_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>{l}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -423,30 +499,22 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
             <SelectContent>
               <SelectItem value="all">Tutte le fasi</SelectItem>
               <SelectItem value="none">Senza fase</SelectItem>
-              {phases.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
+              {phases.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
 
-        {(priorityFilter !== 'all' || phaseFilter !== 'all') && (
+        {hasFilters && (
           <button
-            onClick={() => {
-              setPriorityFilter('all')
-              setPhaseFilter('all')
-            }}
-            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+            onClick={() => { setPriorityFilter('all'); setPhaseFilter('all') }}
+            style={{ fontSize: 12, fontWeight: 700, color: 'var(--tf-muted)', textDecoration: 'underline', textUnderlineOffset: 3 }}
           >
             Azzera filtri
           </button>
         )}
 
-        <span className="ml-auto text-xs text-muted-foreground">
-          {filtered.length} task
-          {filtered.length !== tasks.length && ` di ${tasks.length}`}
+        <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: 'var(--tf-muted)' }}>
+          {filtered.length} task{filtered.length !== tasks.length && ` di ${tasks.length}`}
         </span>
       </div>
 
@@ -458,7 +526,7 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {COLUMNS.map((col) => (
             <KanbanColumn
               key={col.id}
@@ -473,9 +541,19 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
 
         <DragOverlay>
           {activeTask && (
-            <div className="rounded-md border bg-background p-3 shadow-lg opacity-95 cursor-grabbing">
-              <p className="text-sm font-medium mb-2">{activeTask.title}</p>
-              <PriorityBadge priority={activeTask.priority} />
+            <div
+              style={{
+                background: 'var(--tf-panel)',
+                border: '1px solid var(--tf-line)',
+                borderRadius: 10,
+                padding: 12,
+                boxShadow: 'var(--tf-shadow-pop)',
+                opacity: 0.95,
+                cursor: 'grabbing',
+              }}
+            >
+              <p style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 8 }}>{activeTask.title}</p>
+              <PriorityBadge priority={activeTask.priority} size="sm" />
             </div>
           )}
         </DragOverlay>

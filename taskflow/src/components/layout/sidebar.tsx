@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Settings, Users, LayoutDashboard } from 'lucide-react'
+import { Settings, Users, LayoutGrid } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -21,8 +21,6 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical } from 'lucide-react'
-import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { useWorkspace } from '@/lib/context/workspace-context'
 import { CreateProjectDialog } from '@/components/projects/create-project-dialog'
@@ -33,7 +31,6 @@ const workspaceNavItems = [
   { href: '/workspace/members', label: 'Membri', icon: Users },
 ]
 
-// ─── Sortable project item ───────────────────────────────────────────────────
 function SortableProjectItem({ project }: { project: ProjectSummary }) {
   const pathname = usePathname()
   const isActive = pathname.startsWith(`/projects/${project.id}`)
@@ -49,35 +46,48 @@ function SortableProjectItem({ project }: { project: ProjectSummary }) {
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center group">
-      <button
-        {...attributes}
-        {...listeners}
-        className="flex-shrink-0 cursor-grab p-1 text-muted-foreground opacity-0 group-hover:opacity-100"
-        tabIndex={-1}
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </button>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <Link
         href={`/projects/${project.id}`}
-        className={cn(
-          'flex flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-          isActive
-            ? 'bg-accent text-accent-foreground font-medium'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-        )}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          width: '100%',
+          padding: '7px 10px',
+          borderRadius: 7,
+          fontSize: 13,
+          fontWeight: isActive ? 700 : 500,
+          background: isActive ? 'var(--tf-selected)' : 'transparent',
+          transition: 'background 140ms var(--tf-ease)',
+          marginBottom: 1,
+          color: 'inherit',
+          textDecoration: 'none',
+        }}
+        onMouseEnter={(e) => {
+          if (!isActive) e.currentTarget.style.background = 'var(--tf-hover)'
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) e.currentTarget.style.background = 'transparent'
+        }}
       >
         <span
-          className="h-2 w-2 rounded-full flex-shrink-0"
-          style={{ backgroundColor: project.color }}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: project.color,
+            flexShrink: 0,
+          }}
         />
-        <span className="truncate">{project.name}</span>
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {project.name}
+        </span>
       </Link>
     </div>
   )
 }
 
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
 type Props = { projects: ProjectSummary[] }
 
 export function Sidebar({ projects: initialProjects }: Props) {
@@ -119,39 +129,113 @@ export function Sidebar({ projects: initialProjects }: Props) {
     })
   }
 
+  const initial = workspaceName?.[0]?.toUpperCase() ?? 'W'
+
   return (
-    <aside className="flex h-full w-60 flex-col border-r bg-background">
+    <aside
+      style={{
+        width: 248,
+        height: '100%',
+        background: 'var(--tf-panel)',
+        borderRight: '1px solid var(--tf-line)',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+      }}
+    >
       {/* Logo */}
-      <div className="flex h-14 items-center px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <LayoutDashboard className="h-5 w-5 text-primary" />
-          TaskFlow
-        </Link>
-      </div>
-
-      <Separator />
-
-      {/* Workspace name */}
-      <div className="px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Workspace
-        </p>
-        <p className="mt-1 truncate text-sm font-medium">{workspaceName}</p>
-      </div>
-
-      <Separator />
-
-      {/* Progetti */}
-      <div className="flex-1 overflow-y-auto px-2 py-3">
-        <div className="flex items-center justify-between px-2 mb-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Progetti
-          </p>
-          <CreateProjectDialog workspaceId={workspaceId} />
+      <div
+        style={{
+          height: 60,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '0 18px',
+          borderBottom: '1px solid var(--tf-line)',
+        }}
+      >
+        <div
+          style={{
+            width: 28,
+            height: 28,
+            background: 'var(--tf-ink)',
+            borderRadius: 7,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            flexShrink: 0,
+          }}
+        >
+          <LayoutGrid style={{ width: 16, height: 16 }} strokeWidth={2.2} />
         </div>
+        <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.03em' }}>TaskFlow</span>
+      </div>
 
+      {/* Workspace button */}
+      <div style={{ padding: '14px 14px 10px' }}>
+        <div className="uppercase-xs" style={{ marginBottom: 6, paddingLeft: 6 }}>Workspace</div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            width: '100%',
+            padding: '8px 10px',
+            borderRadius: 8,
+            background: 'var(--tf-hover)',
+          }}
+        >
+          <div
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 6,
+              background: 'var(--tf-ink)',
+              color: '#fff',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: 11,
+              flexShrink: 0,
+            }}
+          >
+            {initial}
+          </div>
+          <span
+            style={{
+              fontWeight: 700,
+              fontSize: 13,
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {workspaceName}
+          </span>
+        </div>
+      </div>
+
+      {/* Projects */}
+      <div
+        style={{
+          padding: '8px 14px 4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div className="uppercase-xs" style={{ paddingLeft: 6 }}>Progetti</div>
+        <CreateProjectDialog workspaceId={workspaceId} />
+      </div>
+
+      <div style={{ padding: '2px 8px', flex: 1, overflowY: 'auto' }}>
         {projects.length === 0 ? (
-          <p className="px-2 text-xs text-muted-foreground">Nessun progetto. Creane uno!</p>
+          <p style={{ padding: '8px 10px', fontSize: 12, color: 'var(--tf-muted)' }}>
+            Nessun progetto. Creane uno!
+          </p>
         ) : (
           <DndContext
             sensors={sensors}
@@ -170,26 +254,41 @@ export function Sidebar({ projects: initialProjects }: Props) {
         )}
       </div>
 
-      <Separator />
-
-      {/* Nav workspace */}
-      <nav className="flex flex-col gap-1 px-2 py-3">
-        {workspaceNavItems.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
-              pathname === href
-                ? 'bg-accent text-accent-foreground font-medium'
-                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {label}
-          </Link>
-        ))}
-      </nav>
+      {/* Bottom nav */}
+      <div style={{ borderTop: '1px solid var(--tf-line)', padding: 10 }}>
+        {workspaceNavItems.map(({ href, label, icon: Icon }) => {
+          const isActive = pathname === href
+          return (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                width: '100%',
+                padding: '8px 10px',
+                borderRadius: 7,
+                fontSize: 13,
+                fontWeight: isActive ? 700 : 500,
+                background: isActive ? 'var(--tf-selected)' : 'transparent',
+                textDecoration: 'none',
+                color: 'inherit',
+                transition: 'background 140ms var(--tf-ease)',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.background = 'var(--tf-hover)'
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <Icon style={{ width: 15, height: 15 }} />
+              {label}
+            </Link>
+          )
+        })}
+      </div>
     </aside>
   )
 }

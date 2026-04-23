@@ -17,16 +17,16 @@ import { Textarea } from '@/components/ui/textarea'
 import { Plus } from 'lucide-react'
 
 const PROJECT_COLORS = [
-  '#6366f1', // indigo
-  '#8b5cf6', // violet
-  '#ec4899', // pink
-  '#ef4444', // red
-  '#f97316', // orange
-  '#eab308', // yellow
-  '#22c55e', // green
-  '#14b8a6', // teal
-  '#3b82f6', // blue
-  '#64748b', // slate
+  '#2E5BFF',
+  '#FF2E7E',
+  '#A8D600',
+  '#FFB800',
+  '#7C3AED',
+  '#00C26E',
+  '#FF8A3D',
+  '#FF3B30',
+  '#0A0A0A',
+  '#9A9A9A',
 ]
 
 type Props = { workspaceId: string }
@@ -49,10 +49,29 @@ export function CreateProjectDialog({ workspaceId }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
-        className="flex h-6 w-6 items-center justify-center rounded hover:bg-accent"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 5,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--tf-muted)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+        onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
+          e.currentTarget.style.background = 'var(--tf-hover)'
+          e.currentTarget.style.color = 'var(--tf-ink)'
+        }}
+        onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
+          e.currentTarget.style.background = 'transparent'
+          e.currentTarget.style.color = 'var(--tf-muted)'
+        }}
         title="Crea progetto"
       >
-        <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+        <Plus style={{ width: 14, height: 14 }} strokeWidth={2.2} />
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

@@ -72,7 +72,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <Sidebar projects={projects} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header userEmail={user.email ?? ''} userName={profile?.full_name ?? ''} />
-          <main className="flex-1 overflow-auto p-6">{children}</main>
+          <main className="flex-1 overflow-auto" style={{ padding: '28px 36px' }}>{children}</main>
         </div>
       </div>
     </WorkspaceProvider>

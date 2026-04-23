@@ -16,9 +16,7 @@ export default async function ProjectKanbanPage({ params }: Props) {
   const { projectId } = await params
 
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
 
   const { data: memberRow } = await supabase
@@ -38,29 +36,64 @@ export default async function ProjectKanbanPage({ params }: Props) {
   if (!project) notFound()
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div>
+      {/* Project header */}
+      <div style={{ marginBottom: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
           <span
-            className="h-4 w-4 rounded-full flex-shrink-0"
-            style={{ backgroundColor: project.color }}
+            style={{ width: 14, height: 14, borderRadius: '50%', background: project.color, flexShrink: 0 }}
           />
-          <h1 className="text-2xl font-bold">{project.name}</h1>
+          <h1
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              margin: 0,
+              color: 'var(--tf-ink)',
+            }}
+          >
+            {project.name}
+          </h1>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+            <Link
+              href={`/projects/${projectId}/settings`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                height: 28,
+                padding: '0 10px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                border: '1px solid var(--tf-line)',
+                background: 'transparent',
+                color: 'inherit',
+                textDecoration: 'none',
+              }}
+            >
+              <Settings style={{ width: 14, height: 14 }} />
+              Impostazioni
+            </Link>
+          </div>
         </div>
-        <Link
-          href={`/projects/${projectId}/settings`}
-          className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <Settings className="h-4 w-4" />
-          Impostazioni
-        </Link>
+        {project.description && (
+          <p
+            style={{
+              color: 'var(--tf-muted)',
+              fontSize: 14,
+              fontWeight: 500,
+              margin: '0 0 18px 26px',
+              maxWidth: 680,
+            }}
+          >
+            {project.description}
+          </p>
+        )}
+        <div style={{ paddingLeft: 26 }}>
+          <ProjectViewTabs projectId={projectId} />
+        </div>
       </div>
-
-      {project.description && (
-        <p className="text-muted-foreground text-sm max-w-2xl">{project.description}</p>
-      )}
-
-      <ProjectViewTabs projectId={projectId} />
 
       <KanbanBoard
         initialTasks={tasks}

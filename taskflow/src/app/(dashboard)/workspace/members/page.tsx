@@ -4,7 +4,6 @@ import { getUserWorkspace, getWorkspaceMembers } from '@/lib/queries/workspace'
 import { MemberList } from '@/components/workspace/member-list'
 import { InviteForm } from '@/components/workspace/invite-form'
 import { PermissionGate } from '@/components/shared/permission-gate'
-import { Separator } from '@/components/ui/separator'
 
 export const metadata: Metadata = { title: 'Membri — TaskFlow' }
 
@@ -20,30 +19,22 @@ export default async function WorkspaceMembersPage() {
   const members = await getWorkspaceMembers(workspace.workspaceId)
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Membri del Workspace</h1>
-        <p className="text-muted-foreground">
-          {members.length} {members.length === 1 ? 'membro' : 'membri'}
-        </p>
-      </div>
+    <div style={{ maxWidth: 780 }}>
+      <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 6px', color: 'var(--tf-ink)' }}>
+        Membri
+      </h1>
+      <p style={{ color: 'var(--tf-muted)', fontSize: 14, fontWeight: 500, margin: '0 0 26px' }}>
+        {members.length} {members.length === 1 ? 'persona' : 'persone'} nel workspace.
+      </p>
 
       <PermissionGate workspaceId={workspace.workspaceId} allowedRoles={['super_admin']}>
-        <div className="rounded-lg border p-6">
-          <h2 className="mb-4 text-lg font-semibold">Invita un membro</h2>
+        <div style={{ background: 'var(--tf-panel)', border: '1px solid var(--tf-line)', borderRadius: 12, padding: 24, marginBottom: 24 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 18px', letterSpacing: '-0.02em' }}>Invita un membro</h2>
           <InviteForm />
         </div>
       </PermissionGate>
 
-      <div className="rounded-lg border">
-        <div className="px-6 py-4">
-          <h2 className="text-lg font-semibold">Elenco membri</h2>
-        </div>
-        <Separator />
-        <div className="px-6">
-          <MemberList members={members} currentUserId={user!.id} />
-        </div>
-      </div>
+      <MemberList members={members} currentUserId={user!.id} />
     </div>
   )
 }

@@ -2,11 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { X, Trash2, Calendar, Clock, Tag } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { X, Trash2 } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -19,24 +15,11 @@ import { toast } from 'sonner'
 import { updateTaskAction, deleteTaskAction, assignTaskAction, unassignTaskAction } from '@/app/(dashboard)/projects/[projectId]/actions'
 import { SubtaskSection } from '@/components/tasks/subtask-section'
 import { ChecklistSection } from '@/components/tasks/checklist-section'
+import { StatusBadge } from '@/components/shared/status-badge'
+import { PriorityBadge } from '@/components/shared/priority-badge'
 import type { Task, TaskAssignee } from '@/lib/queries/tasks'
 import type { Phase } from '@/lib/queries/projects'
 import type { WorkspaceMember } from '@/lib/queries/workspace'
-import { cn } from '@/lib/utils'
-
-const STATUS_OPTIONS = [
-  { value: 'open', label: 'Aperta' },
-  { value: 'in_progress', label: 'In corso' },
-  { value: 'on_hold', label: 'Sospesa' },
-  { value: 'completed', label: 'Conclusa' },
-]
-
-const PRIORITY_OPTIONS = [
-  { value: 'low', label: 'Bassa' },
-  { value: 'medium', label: 'Media' },
-  { value: 'high', label: 'Alta' },
-  { value: 'urgent', label: 'Urgente' },
-]
 
 function getInitials(name: string, email: string) {
   if (name.trim()) return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -61,9 +44,6 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
 
   useEffect(() => {
     setLocalTask(task)
-    if (task && titleRef.current) {
-      titleRef.current.focus()
-    }
   }, [task])
 
   if (!task || !localTask) return null
@@ -96,7 +76,7 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
   function handleAssignToggle(member: WorkspaceMember) {
     const existing = localTask!.assignees.find((a) => a.userId === member.userId)
     if (existing) {
-      if (existing.assignmentId === 'pending') return // assign in-flight, ignore
+      if (existing.assignmentId === 'pending') return
       const updated = { ...localTask!, assignees: localTask!.assignees.filter((a) => a.userId !== member.userId) }
       setLocalTask(updated)
       onTaskUpdated(updated)
@@ -105,7 +85,6 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
         router.refresh()
       })
     } else {
-      // Optimistic: add with empty assignmentId (will be replaced on revalidation)
       const newAssignee: TaskAssignee = {
         assignmentId: 'pending',
         userId: member.userId,
@@ -123,187 +102,336 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
     }
   }
 
+  const phaseOptions = [
+    { id: 'none', label: '— Nessuna fase —', color: undefined as string | undefined },
+    ...phases.map((p) => ({ id: p.id, label: p.name, color: p.color })),
+  ]
+
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(10,10,10,0.3)',
+          zIndex: 900,
+          animation: 'fade-in 180ms var(--tf-ease)',
+        }}
+      />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col border-l bg-background shadow-xl">
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: 520,
+          background: 'var(--tf-panel)',
+          borderLeft: '1px solid var(--tf-line)',
+          zIndex: 910,
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'slide-in-right 260ms var(--tf-ease)',
+          boxShadow: '-20px 0 60px -20px rgba(10,10,10,0.15)',
+        }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-5 py-3">
-          <span className="text-xs text-muted-foreground">
-            Creato il {new Date(localTask.created_at).toLocaleDateString('it-IT')}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" onClick={handleDelete} className="text-destructive hover:text-destructive">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '14px 20px',
+            borderBottom: '1px solid var(--tf-line)',
+          }}
+        >
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+            <button
+              onClick={handleDelete}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 7,
+                border: '1px solid var(--tf-line)',
+                background: 'transparent',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--tf-red)',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--tf-hover)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <Trash2 style={{ width: 14, height: 14 }} />
+            </button>
+            <button
+              onClick={onClose}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 7,
+                border: '1px solid var(--tf-line)',
+                background: 'transparent',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--tf-muted)',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--tf-hover)'; e.currentTarget.style.color = 'var(--tf-ink)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--tf-muted)' }}
+            >
+              <X style={{ width: 14, height: 14 }} />
+            </button>
           </div>
         </div>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
           {/* Title */}
-          <Input
+          <input
             ref={titleRef}
             value={localTask.title}
-            className="border-0 px-0 text-xl font-semibold shadow-none focus-visible:ring-0"
             onChange={(e) => setLocalTask((prev) => prev ? { ...prev, title: e.target.value } : null)}
             onBlur={(e) => {
-              if (e.target.value !== task.title && e.target.value.trim()) {
+              if (e.target.value.trim() && e.target.value !== task.title) {
                 handleFieldChange('title', e.target.value.trim())
               }
             }}
+            style={{
+              width: '100%',
+              border: 'none',
+              background: 'transparent',
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: '-0.025em',
+              padding: 0,
+              marginBottom: 18,
+              fontFamily: 'inherit',
+              color: 'inherit',
+            }}
           />
 
-          {/* Description */}
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Descrizione</Label>
-            <Textarea
-              value={localTask.description ?? ''}
-              rows={4}
-              placeholder="Aggiungi una descrizione…"
-              className="resize-none text-sm"
-              onChange={(e) => setLocalTask((prev) => prev ? { ...prev, description: e.target.value || null } : null)}
-              onBlur={(e) => {
-                const val = e.target.value || null
-                if (val !== task.description) {
-                  handleFieldChange('description', val)
-                }
-              }}
-            />
-          </div>
-
-          {/* Status + Priority */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Stato</Label>
+          {/* Field grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '110px 1fr',
+              gap: '12px 16px',
+              alignItems: 'center',
+              marginBottom: 22,
+            }}
+          >
+            {/* Status */}
+            <div className="uppercase-xs">Stato</div>
+            <div>
               <Select value={localTask.status} onValueChange={(v) => v && handleFieldChange('status', v)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
+                <SelectTrigger size="sm" className="h-auto border-0 bg-transparent px-0 shadow-none w-auto">
+                  <StatusBadge status={localTask.status} size="sm" />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
+                  <SelectItem value="open">Aperta</SelectItem>
+                  <SelectItem value="in_progress">In corso</SelectItem>
+                  <SelectItem value="on_hold">Sospesa</SelectItem>
+                  <SelectItem value="completed">Conclusa</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Priorità</Label>
+
+            {/* Priority */}
+            <div className="uppercase-xs">Priorità</div>
+            <div>
               <Select value={localTask.priority} onValueChange={(v) => v && handleFieldChange('priority', v)}>
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
+                <SelectTrigger size="sm" className="h-auto border-0 bg-transparent px-0 shadow-none w-auto">
+                  <PriorityBadge priority={localTask.priority} size="sm" />
                 </SelectTrigger>
                 <SelectContent>
-                  {PRIORITY_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                  ))}
+                  <SelectItem value="low">Bassa</SelectItem>
+                  <SelectItem value="medium">Media</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
+                  <SelectItem value="urgent">Urgente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Phase */}
-          {phases.length > 0 && (
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3" /> Fase</Label>
-              <Select
-                value={localTask.phase_id ?? 'none'}
-                onValueChange={(v) => v && handleFieldChange('phase_id', v === 'none' ? null : v)}
-              >
-                <SelectTrigger size="sm" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Nessuna fase —</SelectItem>
-                  {phases.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      <span className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full inline-block" style={{ backgroundColor: p.color }} />
-                        {p.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+            {/* Phase */}
+            {phases.length > 0 && (
+              <>
+                <div className="uppercase-xs">Fase</div>
+                <div>
+                  <Select
+                    value={localTask.phase_id ?? 'none'}
+                    onValueChange={(v) => v && handleFieldChange('phase_id', v === 'none' ? null : v)}
+                  >
+                    <SelectTrigger size="sm" className="border bg-transparent">
+                      <SelectValue>
+                        {phaseOptions.find((p) => p.id === (localTask.phase_id ?? 'none')) && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            {localTask.phase_id && (
+                              <span
+                                style={{
+                                  width: 6,
+                                  height: 6,
+                                  borderRadius: '50%',
+                                  background: phaseOptions.find((p) => p.id === localTask.phase_id)?.color,
+                                }}
+                              />
+                            )}
+                            <span style={{ fontWeight: 600, fontSize: 12 }}>
+                              {phaseOptions.find((p) => p.id === (localTask.phase_id ?? 'none'))?.label}
+                            </span>
+                          </span>
+                        )}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {phaseOptions.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            {p.color && (
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.color }} />
+                            )}
+                            {p.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Scadenza</Label>
-              <Input
+            {/* Due date */}
+            <div className="uppercase-xs">Scadenza</div>
+            <div>
+              <input
                 type="date"
                 value={localTask.due_date ?? ''}
-                className="text-sm"
                 onChange={(e) => setLocalTask((prev) => prev ? { ...prev, due_date: e.target.value || null } : null)}
                 onBlur={(e) => {
                   const val = e.target.value || null
                   if (val !== task.due_date) handleFieldChange('due_date', val)
                 }}
+                style={{
+                  padding: '6px 10px',
+                  border: '1px solid var(--tf-line)',
+                  borderRadius: 8,
+                  background: 'var(--tf-panel)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'inherit',
+                  color: 'inherit',
+                }}
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Ore stimate</Label>
-              <Input
+
+            {/* Ore stimate */}
+            <div className="uppercase-xs">Ore stimate</div>
+            <div>
+              <input
                 type="number"
                 min="0"
                 step="0.5"
                 value={localTask.estimated_hours ?? ''}
-                className="text-sm"
                 onChange={(e) => setLocalTask((prev) => prev ? { ...prev, estimated_hours: e.target.value ? parseFloat(e.target.value) : null } : null)}
                 onBlur={(e) => {
                   const val = e.target.value ? parseFloat(e.target.value) : null
                   if (val !== task.estimated_hours) handleFieldChange('estimated_hours', val)
                 }}
+                style={{
+                  width: 80,
+                  padding: '6px 10px',
+                  border: '1px solid var(--tf-line)',
+                  borderRadius: 8,
+                  background: 'var(--tf-panel)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'inherit',
+                  color: 'inherit',
+                }}
               />
             </div>
-          </div>
 
-          {/* Assignees */}
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Assegnato a</Label>
-            <div className="space-y-1">
+            {/* Assignees */}
+            <div className="uppercase-xs" style={{ alignSelf: 'start', paddingTop: 6 }}>Assegnatari</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {members.map((member) => {
                 const assignee = localTask.assignees.find((a) => a.userId === member.userId)
                 const assigned = !!assignee
                 const isPending = assignee?.assignmentId === 'pending'
+                const firstName = member.profile.fullName?.split(' ')[0] ?? member.profile.email
                 return (
                   <button
                     key={member.userId}
                     onClick={() => handleAssignToggle(member)}
                     disabled={isPending}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                      assigned ? 'bg-accent' : 'hover:bg-accent/50',
-                      isPending && 'cursor-wait opacity-60',
-                    )}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '3px 10px 3px 3px',
+                      borderRadius: 999,
+                      background: assigned ? 'var(--tf-ink)' : 'var(--tf-panel)',
+                      color: assigned ? '#fff' : 'var(--tf-ink)',
+                      border: `1px solid ${assigned ? 'var(--tf-ink)' : 'var(--tf-line)'}`,
+                      fontSize: 11.5,
+                      fontWeight: 700,
+                      transition: 'all 140ms var(--tf-ease)',
+                      opacity: isPending ? 0.6 : 1,
+                      cursor: isPending ? 'wait' : 'pointer',
+                    }}
                   >
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="text-xs">
+                    <Avatar className="h-[18px] w-[18px]">
+                      <AvatarFallback className="text-[9px]">
                         {getInitials(member.profile.fullName, member.profile.email)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="flex-1 text-left">{member.profile.fullName || member.profile.email}</span>
-                    {assigned && <span className="text-xs text-primary font-medium">✓</span>}
+                    {firstName}
                   </button>
                 )
               })}
             </div>
           </div>
 
+          {/* Description */}
+          <div className="uppercase-xs" style={{ marginBottom: 8 }}>Descrizione</div>
+          <textarea
+            value={localTask.description ?? ''}
+            placeholder="Aggiungi una descrizione…"
+            onChange={(e) => setLocalTask((prev) => prev ? { ...prev, description: e.target.value || null } : null)}
+            onBlur={(e) => {
+              const val = e.target.value || null
+              if (val !== task.description) handleFieldChange('description', val)
+            }}
+            rows={4}
+            style={{
+              width: '100%',
+              resize: 'vertical',
+              padding: 12,
+              border: '1px solid var(--tf-line)',
+              borderRadius: 10,
+              background: 'var(--tf-bg)',
+              fontSize: 13,
+              fontWeight: 500,
+              lineHeight: 1.5,
+              fontFamily: 'inherit',
+              color: 'inherit',
+              marginBottom: 22,
+            }}
+          />
+
           <SubtaskSection parentTaskId={localTask.id} projectId={projectId} />
           <ChecklistSection taskId={localTask.id} projectId={projectId} />
-          <div className="space-y-2 pt-2 border-t">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Commenti</p>
-            <p className="text-xs text-muted-foreground italic">Disponibile nella prossima fase.</p>
-          </div>
+
+          {/* Comments placeholder */}
+          <div className="uppercase-xs" style={{ margin: '22px 0 8px' }}>Commenti</div>
+          <p style={{ fontSize: 12, color: 'var(--tf-muted)', fontStyle: 'italic' }}>
+            Disponibile nella prossima fase.
+          </p>
         </div>
       </div>
     </>

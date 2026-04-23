@@ -1,19 +1,40 @@
 import { cn } from '@/lib/utils'
 
 const PRIORITY_CONFIG = {
-  low: { label: 'Bassa', className: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' },
-  medium: { label: 'Media', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  high: { label: 'Alta', className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
-  urgent: { label: 'Urgente', className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
+  low:    { label: 'Bassa',   bg: '#E8E6DF', ink: '#1f1f1f' },
+  medium: { label: 'Media',   bg: '#FFE36B', ink: '#1f1f1f' },
+  high:   { label: 'Alta',    bg: '#FF8A3D', ink: '#1f1f1f' },
+  urgent: { label: 'Urgente', bg: '#FF3B30', ink: '#FFFFFF' },
 } as const
 
 type Priority = keyof typeof PRIORITY_CONFIG
 
-export function PriorityBadge({ priority, className }: { priority: Priority; className?: string }) {
-  const { label, className: colorClass } = PRIORITY_CONFIG[priority] ?? PRIORITY_CONFIG.medium
+export function PriorityBadge({
+  priority,
+  size = 'md',
+  className,
+}: {
+  priority: Priority
+  size?: 'sm' | 'md'
+  className?: string
+}) {
+  const cfg = PRIORITY_CONFIG[priority] ?? PRIORITY_CONFIG.medium
+  const dims = size === 'sm'
+    ? { height: 20, fontSize: 10.5, paddingX: 7 }
+    : { height: 22, fontSize: 11.5, paddingX: 8 }
+
   return (
-    <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', colorClass, className)}>
-      {label}
+    <span
+      className={cn('inline-flex items-center rounded-full whitespace-nowrap font-bold', className)}
+      style={{
+        height: dims.height,
+        padding: `0 ${dims.paddingX}px`,
+        fontSize: dims.fontSize,
+        background: cfg.bg,
+        color: cfg.ink,
+      }}
+    >
+      {cfg.label}
     </span>
   )
 }

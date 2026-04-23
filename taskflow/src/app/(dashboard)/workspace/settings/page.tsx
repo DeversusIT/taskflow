@@ -22,14 +22,16 @@ export default async function WorkspaceSettingsPage() {
     .single()
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold">Impostazioni Workspace</h1>
-        <p className="text-muted-foreground">Gestisci le impostazioni generali del workspace.</p>
-      </div>
+    <div style={{ maxWidth: 680 }}>
+      <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.03em', margin: '0 0 6px', color: 'var(--tf-ink)' }}>
+        Impostazioni workspace
+      </h1>
+      <p style={{ color: 'var(--tf-muted)', fontSize: 14, fontWeight: 500, margin: '0 0 26px' }}>
+        Gestisci le impostazioni generali.
+      </p>
 
-      <div className="rounded-lg border p-6">
-        <h2 className="mb-4 text-lg font-semibold">Informazioni generali</h2>
+      <div style={{ background: 'var(--tf-panel)', border: '1px solid var(--tf-line)', borderRadius: 12, padding: 24 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 18px', letterSpacing: '-0.02em' }}>Informazioni generali</h2>
         <PermissionGate
           workspaceId={workspace.workspaceId}
           allowedRoles={['super_admin']}
@@ -45,3 +47,4 @@ export default async function WorkspaceSettingsPage() {
     </div>
   )
 }
+
