@@ -35,7 +35,9 @@ function MemberRow({
   const [isPending, startTransition] = useTransition()
 
   function handleRemove() {
-    startTransition(() => removeMemberAction(member.id, workspaceId))
+    startTransition(async () => {
+      await removeMemberAction(member.id, workspaceId)
+    })
   }
 
   function handleRoleChange(role: string | null) {

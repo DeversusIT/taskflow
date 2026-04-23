@@ -8,6 +8,8 @@ import { KanbanBoard } from '@/components/tasks/kanban-board'
 import { ProjectViewTabs } from '@/components/tasks/project-view-tabs'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 type Props = { params: Promise<{ projectId: string }> }
 
 export default async function ProjectKanbanPage({ params }: Props) {

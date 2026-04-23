@@ -330,3 +330,67 @@ Ogni modifica allo schema DB richiede:
 - **Variabili env in Vercel:** configurare nel dashboard Vercel, non nei file
 - **Cron jobs:** configurati in `vercel.json` (endpoint `/api/cron/reminders`)
 - **Edge Runtime:** NON usare per route che usano Supabase server client (usa Node.js runtime)
+
+---
+
+## Linee guida comportamentali (Karpathy)
+
+Principi per ridurre gli errori ricorrenti degli LLM nel coding. Si applicano a ogni task non banale.
+
+**Tradeoff:** questi principi privilegiano la cautela sulla velocità. Per task triviali, usa il giudizio.
+
+### 1. Pensa prima di scrivere codice
+
+**Non fare assunzioni. Non nascondere la confusione. Porta a galla i tradeoff.**
+
+Prima di implementare:
+- Dichiara esplicitamente le assunzioni. Se incerto, chiedi.
+- Se esistono più interpretazioni, presentale — non scegliere in silenzio.
+- Se esiste un approccio più semplice, dillo. Spingi back quando è giustificato.
+- Se qualcosa è poco chiaro, fermati. Nomina cosa crea confusione. Chiedi.
+
+### 2. Semplicità prima
+
+**Il minimo codice che risolve il problema. Niente di speculativo.**
+
+- Nessuna feature oltre a quanto richiesto.
+- Nessuna astrazione per codice a uso singolo.
+- Nessuna "flessibilità" o "configurabilità" non richiesta.
+- Nessun error handling per scenari impossibili.
+- Se hai scritto 200 righe e potrebbero essere 50, riscrivi.
+
+Test: "Un senior engineer direbbe che è troppo complicato?" Se sì, semplifica.
+
+### 3. Modifiche chirurgiche
+
+**Tocca solo ciò che devi. Pulisci solo il tuo disordine.**
+
+Quando modifichi codice esistente:
+- Non "migliorare" codice, commenti o formattazione adiacenti.
+- Non fare refactoring di cose che non sono rotte.
+- Rispetta lo stile esistente, anche se lo faresti diversamente.
+- Se noti dead code non correlato, segnalalo — non eliminarlo.
+
+Quando i tuoi cambiamenti creano orfani:
+- Rimuovi import/variabili/funzioni che I TUOI cambiamenti hanno reso inutilizzati.
+- Non rimuovere dead code pre-esistente a meno che non sia richiesto.
+
+Test: ogni riga modificata deve tracciare direttamente alla richiesta dell'utente.
+
+### 4. Esecuzione orientata agli obiettivi
+
+**Definisci criteri di successo. Itera fino alla verifica.**
+
+Trasforma i task in obiettivi verificabili:
+- "Aggiungi validazione" → "Scrivi test per input invalidi, poi falli passare"
+- "Correggi il bug" → "Scrivi un test che lo riproduce, poi fallo passare"
+- "Refactoring di X" → "Assicura che i test passino prima e dopo"
+
+Per task multi-step, dichiara un piano breve:
+```
+1. [Step] → verifica: [check]
+2. [Step] → verifica: [check]
+3. [Step] → verifica: [check]
+```
+
+Criteri di successo forti permettono di iterare in autonomia. Criteri deboli ("fallo funzionare") richiedono continue chiarificazioni.

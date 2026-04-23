@@ -8,12 +8,13 @@ import { TaskList } from '@/components/tasks/task-list'
 import { ProjectViewTabs } from '@/components/tasks/project-view-tabs'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 type Props = { params: Promise<{ projectId: string }> }
 
 export default async function ProjectPage({ params }: Props) {
   const { projectId } = await params
 
-  // Get workspace id for member list
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()

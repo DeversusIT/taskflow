@@ -118,48 +118,94 @@ export async function updateTaskAction(
   return { error: null }
 }
 
-export async function deleteTaskAction(taskId: string, projectId: string): Promise<void> {
-  const serviceClient = createServiceClient()
-  await serviceClient.from('tasks').delete().eq('id', taskId)
+export async function deleteTaskAction(
+  taskId: string,
+  projectId: string,
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autenticato' }
+
+  const { error } = await supabase.from('tasks').delete().eq('id', taskId)
+  if (error) return { error: error.message }
+
   revalidateProjectPaths(projectId)
+  return { error: null }
 }
 
 export async function assignTaskAction(
   taskId: string,
   userId: string,
   projectId: string,
-): Promise<void> {
-  const serviceClient = createServiceClient()
-  await serviceClient
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autenticato' }
+
+  const { error } = await supabase
     .from('task_assignments')
     .upsert({ task_id: taskId, user_id: userId }, { onConflict: 'task_id,user_id' })
+  if (error) return { error: error.message }
+
   revalidateProjectPaths(projectId)
+  return { error: null }
 }
 
 export async function unassignTaskAction(
   assignmentId: string,
   projectId: string,
-): Promise<void> {
-  const serviceClient = createServiceClient()
-  await serviceClient.from('task_assignments').delete().eq('id', assignmentId)
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autenticato' }
+
+  const { error } = await supabase.from('task_assignments').delete().eq('id', assignmentId)
+  if (error) return { error: error.message }
+
   revalidateProjectPaths(projectId)
+  return { error: null }
 }
 
 export async function bulkUpdateStatusAction(
   taskIds: string[],
   status: 'open' | 'in_progress' | 'on_hold' | 'completed',
   projectId: string,
-): Promise<void> {
-  const serviceClient = createServiceClient()
-  await serviceClient
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autenticato' }
+
+  const { error } = await supabase
     .from('tasks')
     .update({ status, updated_at: new Date().toISOString() })
     .in('id', taskIds)
+  if (error) return { error: error.message }
+
   revalidateProjectPaths(projectId)
+  return { error: null }
 }
 
-export async function bulkDeleteTasksAction(taskIds: string[], projectId: string): Promise<void> {
-  const serviceClient = createServiceClient()
-  await serviceClient.from('tasks').delete().in('id', taskIds)
+export async function bulkDeleteTasksAction(
+  taskIds: string[],
+  projectId: string,
+): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autenticato' }
+
+  const { error } = await supabase.from('tasks').delete().in('id', taskIds)
+  if (error) return { error: error.message }
+
   revalidateProjectPaths(projectId)
+  return { error: null }
 }

@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { toast } from 'sonner'
 import { updateTaskAction, deleteTaskAction, assignTaskAction, unassignTaskAction } from '@/app/(dashboard)/projects/[projectId]/actions'
 import type { Task, TaskAssignee } from '@/lib/queries/tasks'
 import type { Phase } from '@/lib/queries/projects'
@@ -78,17 +79,22 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
 
   function handleDelete() {
     if (!confirm('Eliminare questo task?')) return
-    onTaskDeleted(task!.id)
+    const taskId = task!.id
     onClose()
     startTransition(async () => {
-      await deleteTaskAction(task!.id, projectId)
-      router.refresh()
+      const { error } = await deleteTaskAction(taskId, projectId)
+      if (error) {
+        toast.error('Errore eliminazione task')
+        return
+      }
+      onTaskDeleted(taskId)
     })
   }
 
   function handleAssignToggle(member: WorkspaceMember) {
     const existing = localTask!.assignees.find((a) => a.userId === member.userId)
     if (existing) {
+      if (existing.assignmentId === 'pending') return // assign in-flight, ignore
       const updated = { ...localTask!, assignees: localTask!.assignees.filter((a) => a.userId !== member.userId) }
       setLocalTask(updated)
       onTaskUpdated(updated)

@@ -28,23 +28,56 @@ export type Task = {
 export async function getProjectTasks(projectId: string): Promise<Task[]> {
   const supabase = await createClient()
 
-  const { data } = await supabase
+  // Step 1: fetch tasks without join
+  const { data, error } = await supabase
     .from('tasks')
     .select(
-      'id, title, description, status, priority, phase_id, due_date, start_date, estimated_hours, order_index, created_by, created_at, updated_at, task_assignments(id, user_id, profiles(full_name, email, avatar_url))',
+      'id, title, description, status, priority, phase_id, due_date, start_date, estimated_hours, order_index, created_by, created_at, updated_at',
     )
     .eq('project_id', projectId)
     .is('parent_task_id', null) // solo task radice, non subtask
     .order('order_index', { ascending: true })
 
-  if (!data) return []
+  if (error) {
+    console.error('[getProjectTasks] query error:', error.message, error.code)
+    return []
+  }
+  if (!data || data.length === 0) return []
+
+  // Step 2: fetch assignees separately
+  // NOTE: we use profiles!user_id to disambiguate because task_assignments
+  // has TWO foreign keys to profiles (user_id and assigned_by).
+  // Without the hint, PostgREST silently returns empty results.
+  const taskIds = data.map((t) => t.id)
+  const { data: assignments, error: assignError } = await supabase
+    .from('task_assignments')
+    .select('id, task_id, user_id, profiles!user_id(full_name, email, avatar_url)')
+    .in('task_id', taskIds)
+
+  if (assignError) {
+    console.error('[getProjectTasks] assignments error:', assignError.message, assignError.code)
+    // Return tasks without assignees rather than failing entirely
+  }
+
+  // Build a map of task_id -> assignments
+  const assignMap = new Map<string, Array<{
+    id: string
+    user_id: string
+    profiles: { full_name: string; email: string; avatar_url: string | null } | null
+  }>>()
+  for (const a of (assignments ?? []) as Array<{
+    id: string
+    task_id: string
+    user_id: string
+    profiles: { full_name: string; email: string; avatar_url: string | null } | null
+  }>) {
+    const list = assignMap.get(a.task_id) ?? []
+    list.push(a)
+    assignMap.set(a.task_id, list)
+  }
 
   return data.map((t) => {
-    const rawAssignees = t.task_assignments as unknown as Array<{
-      id: string
-      user_id: string
-      profiles: { full_name: string; email: string; avatar_url: string | null } | null
-    }>
+    const taskAssignees = assignMap.get(t.id) ?? []
 
     return {
       id: t.id,
@@ -60,7 +93,7 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       created_by: t.created_by,
       created_at: t.created_at,
       updated_at: t.updated_at,
-      assignees: (rawAssignees ?? []).map((a) => ({
+      assignees: taskAssignees.map((a) => ({
         assignmentId: a.id,
         userId: a.user_id,
         fullName: a.profiles?.full_name ?? '',

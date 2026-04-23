@@ -71,6 +71,22 @@ export async function updateMemberRoleAction(
   }
 
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autenticato' }
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('role')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membership?.role !== 'super_admin') {
+    return { error: 'Non hai i permessi per modificare i ruoli' }
+  }
+
   const { error } = await supabase
     .from('workspace_members')
     .update({ role: result.data.role })
@@ -83,13 +99,35 @@ export async function updateMemberRoleAction(
   return { error: null }
 }
 
-export async function removeMemberAction(memberId: string, workspaceId: string): Promise<void> {
+export async function removeMemberAction(
+  memberId: string,
+  workspaceId: string,
+): Promise<MemberActionState> {
   const supabase = await createClient()
-  await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autenticato' }
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('role')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membership?.role !== 'super_admin') {
+    return { error: 'Non hai i permessi per rimuovere membri' }
+  }
+
+  const { error } = await supabase
     .from('workspace_members')
     .delete()
     .eq('id', memberId)
     .eq('workspace_id', workspaceId)
 
+  if (error) return { error: error.message }
+
   revalidatePath('/workspace/members')
+  return { error: null }
 }

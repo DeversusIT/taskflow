@@ -82,6 +82,7 @@ function QuickAddTask({
         setError(result.error)
       } else if (result.newTask) {
         onCreated(result.newTask)
+        router.refresh()
         setOpen(false)
         if (titleRef.current) titleRef.current.value = ''
       }

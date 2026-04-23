@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import {
   DndContext,
@@ -33,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { toast } from 'sonner'
 import { TaskPanel } from '@/components/tasks/task-panel'
 import {
   createTaskAction,
@@ -171,10 +173,11 @@ function KanbanColumn({
   tasks: Task[]
   phases: Phase[]
   onOpen: (t: Task) => void
-  onQuickAdd: (status: Status, title: string) => void
+  onQuickAdd: (status: Status, title: string) => Promise<void>
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'column' } })
   const [adding, setAdding] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -182,10 +185,12 @@ function KanbanColumn({
     if (adding) setTimeout(() => inputRef.current?.focus(), 50)
   }, [adding])
 
-  function submit() {
+  async function submit() {
     const v = value.trim()
-    if (!v) return
-    onQuickAdd(column.id, v)
+    if (!v || saving) return
+    setSaving(true)
+    await onQuickAdd(column.id, v)
+    setSaving(false)
     setValue('')
     setAdding(false)
   }
@@ -234,8 +239,8 @@ function KanbanColumn({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') submit()
-                if (e.key === 'Escape') {
+                if (e.key === 'Enter') { e.preventDefault(); void submit() }
+                if (e.key === 'Escape' && !saving) {
                   setAdding(false)
                   setValue('')
                 }
@@ -243,12 +248,13 @@ function KanbanColumn({
               placeholder="Titolo…"
               className="h-7 text-xs"
             />
-            <Button size="sm" onClick={submit} disabled={!value.trim()}>
-              +
+            <Button size="sm" onClick={submit} disabled={!value.trim() || saving}>
+              {saving ? '…' : '+'}
             </Button>
             <Button
               size="sm"
               variant="ghost"
+              disabled={saving}
               onClick={() => {
                 setAdding(false)
                 setValue('')
@@ -272,6 +278,7 @@ type Props = {
 }
 
 export function KanbanBoard({ initialTasks, projectId, phases, members }: Props) {
+  const router = useRouter()
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [openTask, setOpenTask] = useState<Task | null>(null)
@@ -355,7 +362,13 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
 
     if (original.status !== current.status) {
       startTransition(async () => {
-        await updateTaskAction(activeId, projectId, { status: current.status })
+        const { error } = await updateTaskAction(activeId, projectId, { status: current.status })
+        if (error) {
+          setTasks((prev) =>
+            prev.map((t) => (t.id === activeId ? { ...t, status: original.status } : t)),
+          )
+          toast.error('Errore aggiornamento stato task')
+        }
       })
     }
   }
@@ -366,8 +379,13 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
     formData.set('status', status)
     formData.set('priority', 'medium')
     const res = await createTaskAction(projectId, { error: null }, formData)
+    if (res.error) {
+      toast.error(res.error)
+      return
+    }
     if (res.newTask) {
       setTasks((prev) => [...prev, { ...res.newTask!, assignees: [] }])
+      router.refresh()
     }
   }
 

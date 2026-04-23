@@ -19,6 +19,22 @@ export async function updateWorkspaceAction(
   }
 
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Non autenticato' }
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('role')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (membership?.role !== 'super_admin') {
+    return { error: 'Non hai i permessi per modificare il workspace' }
+  }
+
   const { error } = await supabase
     .from('workspaces')
     .update({ name: result.data.name })
