@@ -17,6 +17,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { toast } from 'sonner'
 import { updateTaskAction, deleteTaskAction, assignTaskAction, unassignTaskAction } from '@/app/(dashboard)/projects/[projectId]/actions'
+import { SubtaskSection } from '@/components/tasks/subtask-section'
+import { ChecklistSection } from '@/components/tasks/checklist-section'
 import type { Task, TaskAssignee } from '@/lib/queries/tasks'
 import type { Phase } from '@/lib/queries/projects'
 import type { WorkspaceMember } from '@/lib/queries/workspace'
@@ -296,11 +298,8 @@ export function TaskPanel({ task, projectId, phases, members, onClose, onTaskUpd
             </div>
           </div>
 
-          {/* Placeholders for Phase 8 & 9 */}
-          <div className="space-y-2 pt-2 border-t">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider">Subtask</p>
-            <p className="text-xs text-muted-foreground italic">Disponibile nella prossima fase.</p>
-          </div>
+          <SubtaskSection parentTaskId={localTask.id} projectId={projectId} />
+          <ChecklistSection taskId={localTask.id} projectId={projectId} />
           <div className="space-y-2 pt-2 border-t">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Commenti</p>
             <p className="text-xs text-muted-foreground italic">Disponibile nella prossima fase.</p>

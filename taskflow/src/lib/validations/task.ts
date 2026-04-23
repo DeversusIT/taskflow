@@ -9,6 +9,7 @@ export const CreateTaskSchema = z.object({
   due_date: z.string().optional().nullable(),
   start_date: z.string().optional().nullable(),
   estimated_hours: z.coerce.number().min(0).max(9999).optional().nullable(),
+  parent_task_id: z.string().uuid().optional().nullable(),
 })
 
 export const UpdateTaskSchema = z.object({

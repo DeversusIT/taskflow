@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, ChevronDown, Trash2, CheckSquare } from 'lucide-react'
+import { Plus, ChevronDown, Trash2, CheckSquare, ListChecks } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -370,6 +370,12 @@ export function TaskList({ initialTasks, projectId, phases, members }: Props) {
                 {/* Title + assignees */}
                 <div className="flex items-center gap-2 min-w-0">
                   <span className={cn('truncate', task.status === 'completed' && 'line-through')}>{task.title}</span>
+                  {task.subtask_count > 0 && (
+                    <span className="flex items-center gap-0.5 text-xs text-muted-foreground flex-shrink-0">
+                      <ListChecks className="h-3 w-3" />
+                      {task.subtask_count}
+                    </span>
+                  )}
                   {task.assignees.length > 0 && (
                     <div className="flex -space-x-1.5 flex-shrink-0">
                       {task.assignees.slice(0, 3).map((a) => (
@@ -429,7 +435,7 @@ export function TaskList({ initialTasks, projectId, phases, members }: Props) {
             projectId={projectId}
             phases={phases}
             onCreated={(newTask) => {
-              setTasks((prev) => [...prev, { ...newTask, assignees: [] }])
+              setTasks((prev) => [...prev, { ...newTask, assignees: [], subtask_count: 0 }])
               setSelected(new Set())
             }}
           />

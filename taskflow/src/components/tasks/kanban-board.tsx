@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus } from 'lucide-react'
+import { Plus, ListChecks } from 'lucide-react'
 import {
   DndContext,
   DragOverlay,
@@ -142,6 +142,12 @@ function KanbanCard({
               )}
             >
               {due}
+            </span>
+          )}
+          {task.subtask_count > 0 && (
+            <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+              <ListChecks className="h-3 w-3" />
+              {task.subtask_count}
             </span>
           )}
           {task.assignees.length > 0 && (
@@ -384,7 +390,7 @@ export function KanbanBoard({ initialTasks, projectId, phases, members }: Props)
       return
     }
     if (res.newTask) {
-      setTasks((prev) => [...prev, { ...res.newTask!, assignees: [] }])
+      setTasks((prev) => [...prev, { ...res.newTask!, assignees: [], subtask_count: 0 }])
       router.refresh()
     }
   }
